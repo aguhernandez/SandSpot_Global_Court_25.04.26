@@ -31,50 +31,61 @@
         <span class="brand-name">SandSpot</span>
       </a>
       <p class="topbar-hud" aria-live="polite">
-        <strong data-courts-tracked>76</strong>&nbsp;courts on file
+        <strong data-courts-tracked>76</strong>&nbsp;<span data-i18n="hud.on">courts on file</span>
       </p>
-      <nav class="topnav" aria-label="Panels">
-        <button data-panel="mission">The mission</button>
-        <button data-panel="roadmap">Roadmap</button>
-        <button data-panel="add">Add a court</button>
-        <button class="topnav-cta" data-panel="join">Get the map first</button>
+      <nav class="langbox" id="langbox" aria-hidden="false">
+        <button class="lang-btn" id="lang-btn" type="button" aria-haspopup="true" aria-expanded="false"
+                data-i18n-attr="aria-label:lang.a">
+          <span class="lang-globe" aria-hidden="true"></span>
+          <span class="lang-code" id="lang-code">EN</span>
+          <span class="lang-caret" aria-hidden="true">▾</span>
+        </button>
+        <div class="lang-menu" id="lang-menu" hidden></div>
+      </nav>
+      <nav class="topnav" aria-label="Panels" data-i18n-attr="aria-label:nav.a">
+        <button data-panel="mission" data-i18n="nav.mission">The mission</button>
+        <button data-panel="roadmap" data-i18n="nav.roadmap">Roadmap</button>
+        <button data-panel="add" data-i18n="nav.add">Add a court</button>
+        <button class="topnav-cta" data-panel="join" data-i18n="nav.join">Get the map first</button>
       </nav>
     </header>
 
     <!-- zoom controls -->
-    <div class="zoomer" aria-label="Map zoom controls">
-      <button data-zoom="in" aria-label="Zoom in">+</button>
-      <button data-zoom="out" aria-label="Zoom out">−</button>
-      <button data-zoom="fit" aria-label="Fit the whole world">⌖</button>
+    <div class="zoomer" aria-label="Map zoom controls" data-i18n-attr="aria-label:z.group">
+      <button data-zoom="in" aria-label="Zoom in" data-i18n-attr="aria-label:z.in">+</button>
+      <button data-zoom="out" aria-label="Zoom out" data-i18n-attr="aria-label:z.out">−</button>
+      <button data-zoom="fit" aria-label="Fit the whole world" data-i18n-attr="aria-label:z.fit">⌖</button>
     </div>
 
     <!-- search dock -->
-    <section class="dock" aria-label="Court search">
+    <section class="dock" aria-label="Court search" data-i18n-attr="aria-label:search.group">
       <div class="search-shell">
         <div class="search-bar">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <circle cx="11" cy="11" r="7" stroke="#14293d" stroke-width="2.2"/>
             <path d="M16.5 16.5 21 21" stroke="#14293d" stroke-width="2.2" stroke-linecap="round"/>
           </svg>
-          <label class="visually-hidden" for="search-input">Search courts</label>
-          <input id="search-input" type="search" autocomplete="off" placeholder="Search a city, a beach, a country" />
+          <label class="visually-hidden" for="search-input" data-i18n="search.label">Search courts</label>
+          <input id="search-input" type="search" autocomplete="off"
+                 placeholder="Search a city, a beach, a country"
+                 data-i18n-attr="placeholder:search.ph" />
         </div>
-        <div class="search-filters" role="group" aria-label="Filters">
-          <button class="chip" type="button" data-filter="public"><span class="dot" aria-hidden="true"></span>Public sand</button>
-          <button class="chip" type="button" data-filter="partner"><span class="dot" aria-hidden="true"></span>Partner venues</button>
-          <button class="chip" type="button" data-filter="lights"><span class="dot" aria-hidden="true"></span>Night lights</button>
+        <div class="search-filters" role="group" aria-label="Filters" data-i18n-attr="aria-label:search.filters">
+          <button class="chip" type="button" data-filter="public"><span class="dot" aria-hidden="true"></span><span data-i18n="chip.public">Public sand</span></button>
+          <button class="chip" type="button" data-filter="partner"><span class="dot" aria-hidden="true"></span><span data-i18n="chip.partner">Partner venues</span></button>
+          <button class="chip" type="button" data-filter="lights"><span class="dot" aria-hidden="true"></span><span data-i18n="chip.lights">Night lights</span></button>
         </div>
         <div class="search-results" id="search-results" hidden></div>
       </div>
     </section>
 
     <p class="hintbar" id="hintbar" aria-hidden="true">
-      <span class="he">drag the world</span><span class="hb-dot">·</span>
-      <span class="he">scroll or pinch to zoom</span><span class="hb-dot">·</span>
-      <span class="he">tap a yellow dot</span>
+      <span class="he" data-i18n="hint.drag">drag the world</span><span class="hb-dot">·</span>
+      <span class="he" data-i18n="hint.zoom">scroll or pinch to zoom</span><span class="hb-dot">·</span>
+      <span class="he" data-i18n="hint.tap">tap a yellow dot</span>
     </p>
 
-    <p class="credit" aria-hidden="true">hand-checked records · corrections welcome</p>
+    <p class="credit" aria-hidden="true" data-i18n="credit">hand-checked records · corrections welcome</p>
   </main>
 
   <!-- ============================================================
@@ -88,95 +99,101 @@
 
   <aside class="drawer" id="panel-mission" role="dialog" aria-modal="false" aria-label="The mission" hidden>
     <header class="drawer-head">
-      <h2>The mission</h2>
-      <button class="drawer-close" data-close aria-label="Close panel">×</button>
+      <h2 data-i18n="nav.mission">The mission</h2>
+      <button class="drawer-close" data-close aria-label="Close panel" data-i18n-attr="aria-label:close.a">×</button>
     </header>
     <div class="drawer-body">
-      <h3 class="drawer-lede">Finding sand in a new city shouldn't depend on knowing a local.</h3>
-      <p>Today it does. Players ask around. Locals know two or three courts and keep the rest
+      <h3 class="drawer-lede" data-i18n="mission.lede">Finding sand in a new city shouldn't depend on knowing a local.</h3>
+      <p data-i18n="mission.p1">Today it does. Players ask around. Locals know two or three courts and keep the rest
       to themselves. Clubs list hours nowhere, cities bury them in PDFs, hotel courts never
       make it online at all.</p>
-      <p><strong>The courts already exist — they are just not written down anywhere.</strong></p>
-      <p>SandSpot is writing them down: one registry, every court, checked by the people who
+      <p data-i18n-html="mission.p2"><strong>The courts already exist — they are just not written down anywhere.</strong></p>
+      <p data-i18n="mission.p3">SandSpot is writing them down: one registry, every court, checked by the people who
       play on them. <strong data-courts-tracked>76</strong> are on file today. The map you
       just moved is the registry, working.</p>
       <div class="drawer-cta">
-        <button class="btn-ghost" data-panel="add">Add a court we're missing</button>
+        <button class="btn-ghost" data-panel="add" data-i18n="mission.cta">Add a court we're missing</button>
       </div>
     </div>
   </aside>
 
   <aside class="drawer" id="panel-roadmap" role="dialog" aria-modal="false" aria-label="Roadmap" hidden>
     <header class="drawer-head">
-      <h2>Where this goes</h2>
-      <button class="drawer-close" data-close aria-label="Close panel">×</button>
+      <h2 data-i18n="road.head">Where this goes</h2>
+      <button class="drawer-close" data-close aria-label="Close panel" data-i18n-attr="aria-label:close.a">×</button>
     </header>
     <div class="drawer-body">
       <ol class="roadmap-rows">
         <li class="roadmap-row">
-          <div class="roadmap-status">Today</div>
-          <div class="roadmap-line"><strong>The registry.</strong> We track and verify courts; the record grows every week. Corrections welcome — the players know best.</div>
+          <div class="roadmap-status" data-i18n="road.s1">Today</div>
+          <div class="roadmap-line" data-i18n-html="road.l1"><strong>The registry.</strong> We track and verify courts; the record grows every week. Corrections welcome — the players know best.</div>
         </li>
         <li class="roadmap-row">
-          <div class="roadmap-status">Next</div>
-          <div class="roadmap-line"><strong>The map, everywhere.</strong> Full court pages: photos, hours, rules. A copy of the truth in every player's pocket.</div>
+          <div class="roadmap-status" data-i18n="road.s2">Next</div>
+          <div class="roadmap-line" data-i18n-html="road.l2"><strong>The map, everywhere.</strong> Full court pages: photos, hours, rules. A copy of the truth in every player's pocket.</div>
         </li>
         <li class="roadmap-row">
-          <div class="roadmap-status">Then</div>
-          <div class="roadmap-line"><strong>The game.</strong> Book court time, find players at your level, run tournaments. The playing layer comes after the map earns trust.</div>
+          <div class="roadmap-status" data-i18n="road.s3">Then</div>
+          <div class="roadmap-line" data-i18n-html="road.l3"><strong>The game.</strong> Book court time, find players at your level, run tournaments. The playing layer comes after the map earns trust.</div>
         </li>
       </ol>
       <div class="drawer-cta">
-        <button class="btn-ghost" data-panel="join">Get the map first</button>
+        <button class="btn-ghost" data-panel="join" data-i18n="road.cta">Get the map first</button>
       </div>
     </div>
   </aside>
 
   <aside class="drawer" id="panel-add" role="dialog" aria-modal="false" aria-label="Add a court" hidden>
     <header class="drawer-head">
-      <h2>Add a court</h2>
-      <button class="drawer-close" data-close aria-label="Close panel">×</button>
+      <h2 data-i18n="nav.add">Add a court</h2>
+      <button class="drawer-close" data-close aria-label="Close panel" data-i18n-attr="aria-label:close.a">×</button>
     </header>
     <div class="drawer-body">
-      <p class="drawer-lede-small">Takes a minute. It goes on file within days, and the registry stays free.</p>
+      <p class="drawer-lede-small" data-i18n="add.lede">Takes a minute. It goes on file within days, and the registry stays free.</p>
       <div class="add-fields">
-        <label>Court name
-          <input id="add-name" type="text" placeholder="e.g. Kite Beach Volleyball" />
+        <label><span data-i18n="add.l1">Court name</span>
+          <input id="add-name" type="text" placeholder="e.g. Kite Beach Volleyball"
+                 data-i18n-attr="placeholder:add.ph1" />
         </label>
-        <label>City &amp; country
-          <input id="add-place" type="text" placeholder="e.g. Dubai, UAE" />
+        <label><span data-i18n="add.l2">City &amp; country</span>
+          <input id="add-place" type="text" placeholder="e.g. Dubai, UAE"
+                 data-i18n-attr="placeholder:add.ph2" />
         </label>
         <div class="add-half">
-          <label>How many sand courts?
-            <input id="add-count" type="text" inputmode="numeric" placeholder="4" />
+          <label><span data-i18n="add.l3">How many sand courts?</span>
+            <input id="add-count" type="text" inputmode="numeric" placeholder="4"
+                   data-i18n-attr="placeholder:add.ph3" />
           </label>
-          <label>Anything else the players should know?
-            <input id="add-note" type="text" placeholder="lit until 11pm, free…" />
+          <label><span data-i18n="add.l4">Anything else the players should know?</span>
+            <input id="add-note" type="text" placeholder="lit until 11pm, free…"
+                   data-i18n-attr="placeholder:add.ph4" />
           </label>
         </div>
       </div>
       <div class="drawer-cta">
-        <a class="btn-solid" id="add-mail" href="#" target="_blank" rel="noopener">Open the mail with everything written</a>
+        <a class="btn-solid" id="add-mail" href="#" target="_blank" rel="noopener" data-i18n="add.cta">Open the mail with everything written</a>
       </div>
     </div>
   </aside>
 
   <aside class="drawer" id="panel-join" role="dialog" aria-modal="false" aria-label="Get the map first" hidden>
     <header class="drawer-head">
-      <h2>Get the map first</h2>
-      <button class="drawer-close" data-close aria-label="Close panel">×</button>
+      <h2 data-i18n="nav.join">Get the map first</h2>
+      <button class="drawer-close" data-close aria-label="Close panel" data-i18n-attr="aria-label:close.a">×</button>
     </header>
     <div class="drawer-body">
-      <p class="drawer-lede-small">One email when the map opens wide. Court additions welcome sooner — they are what makes the map worth opening.</p>
+      <p class="drawer-lede-small" data-i18n="join.lede">One email when the map opens wide. Court additions welcome sooner — they are what makes the map worth opening.</p>
       <form class="join-form" id="join-form" novalidate>
         <div class="join-fields">
           <label class="visually-hidden" for="join-email">Your email</label>
-          <input id="join-email" name="email" type="email" autocomplete="email" placeholder="you@wherever.com" required />
-          <button type="submit">Join</button>
+          <input id="join-email" name="email" type="email" autocomplete="email"
+                 placeholder="you@wherever.com" required
+                 data-i18n-attr="placeholder:join.ph" />
+          <button type="submit" data-i18n="join.btn">Join</button>
         </div>
         <p class="form-msg" role="status" aria-live="polite"></p>
       </form>
-      <p class="drawer-note">No spam, no schedule — one mail when there's something to play with.</p>
+      <p class="drawer-note" data-i18n="join.note">No spam, no schedule — one mail when there's something to play with.</p>
     </div>
   </aside>
 
@@ -187,14 +204,16 @@
     <div class="ball-stage"><div class="splash-ball"></div></div>
     <svg id="splashMap" viewBox="0 0 1000 520" preserveAspectRatio="xMidYMid meet"></svg>
     <h1 class="splash-title">
-      <span class="t-line">Every court<br/>in the world.</span>
-      <span class="t-line t-accent">One map.</span>
+      <span class="t-line" data-i18n-html="splash.1">Every court<br/>in the world.</span>
+      <span class="t-line t-accent" data-i18n-html="splash.2">One map.</span>
     </h1>
   </div>
 
+  <script src="assets/i18n.js"></script>
   <script src="data/world-dots.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
   <script src="assets/main.js"></script>
+  <script src="assets/suite.js"></script>
   <noscript>
     <style>
       .splash { display: none; }

@@ -20,6 +20,11 @@
   };
   const CONTACT = "hello@sandspot.app"; // TODO: real inbox
 
+  // i18n — window.SandSpotI18N is built before this file (see index.html order)
+  const t = window.SandSpotI18N ? window.SandSpotI18N.t : (k) => k;
+  const typeT = (tt) => tt === "public" ? t("type.public")
+    : tt === "partner" ? t("type.partner") : tt;
+
   /* ------------------------------------------------------------
      Projection: lng/lat → viewBox 1000×520
      ------------------------------------------------------------ */
@@ -345,27 +350,27 @@
       // rating — no rating column yet: honest empty state, five hollow stars
       const stars = `<div class="rate">
         <span class="stars" aria-hidden="true">${"★★★★★".split("").map(() => '<i>★</i>').join("")}</span>
-        <span class="rate-note">Not rated yet — reviews land with the next build</span>
+        <span class="rate-note">${t("rate.no")}</span>
       </div>`;
 
       // photos — none on file: three slots, one actionable
       const photos = `<div class="photo-row">
-        ${[0,1,2].map((i) => `<div class="photo-slot"><span>photo ${i+1}</span></div>`).join("")}
+        ${[0,1,2].map((i) => `<div class="photo-slot"><span>${t("photo.n", { n: i + 1 })}</span></div>`).join("")}
       </div>
-      <p class="photo-note">No photos on file. <a href="mailto:${CONTACT}?subject=${encodeURIComponent("Photos: " + c.name + " (" + c.city + ")")}">Send one</a> and it becomes the cover.</p>`;
+      <p class="photo-note">${t("pn.miss")} <a href="mailto:${CONTACT}?subject=${encodeURIComponent("Photos: " + c.name + " (" + c.city + ")")}">${t("pn.link")}</a> ${t("pn.tail")}</p>`;
 
       const rows = [];
-      rows.push(`<div class="meta-cell wide"><div class="k">Where exactly</div><div class="v">${esc(c.address || c.city)}</div></div>`);
-      rows.push(`<div class="meta-cell"><div class="k">Sand courts</div><div class="v">${c.num_courts ?? "?"}</div></div>`);
-      rows.push(`<div class="meta-cell"><div class="k">Access</div><div class="v">${esc(c.court_type || "public")}</div></div>`);
-      rows.push(`<div class="meta-cell"><div class="k">Night lights</div><div class="v">${c.has_lights ? "Yes" : "—"}</div></div>`);
-      rows.push(`<div class="meta-cell"><div class="k">Price</div><div class="v">${c.price_per_hour != null ? "$" + c.price_per_hour + "/h" : "Free"}</div></div>`);
-      rows.push(`<div class="meta-cell"><div class="k">Checked on file</div><div class="v">${c.views ?? 0}×</div></div>`);
+      rows.push(`<div class="meta-cell wide"><div class="k">${t("c.where")}</div><div class="v">${esc(c.address || c.city)}</div></div>`);
+      rows.push(`<div class="meta-cell"><div class="k">${t("c.courts")}</div><div class="v">${c.num_courts ?? "?"}</div></div>`);
+      rows.push(`<div class="meta-cell"><div class="k">${t("c.access")}</div><div class="v">${typeT(c.court_type || "public")}</div></div>`);
+      rows.push(`<div class="meta-cell"><div class="k">${t("c.lights")}</div><div class="v">${c.has_lights ? t("c.yes") : "—"}</div></div>`);
+      rows.push(`<div class="meta-cell"><div class="k">${t("c.price")}</div><div class="v">${c.price_per_hour != null ? "$" + c.price_per_hour + "/h" : t("c.free")}</div></div>`);
+      rows.push(`<div class="meta-cell"><div class="k">${t("c.checked")}</div><div class="v">${c.views ?? 0}×</div></div>`);
 
       const lines = [];
-      if (c.opening_hours) lines.push(["Hours", esc(c.opening_hours)]);
-      if (c.surface_detail || c.surface) lines.push(["Surface", esc(c.surface_detail || c.surface)]);
-      if (c.rules) lines.push(["House rules", esc(c.rules)]);
+      if (c.opening_hours) lines.push([t("d.hours"), esc(c.opening_hours)]);
+      if (c.surface_detail || c.surface) lines.push([t("d.surface"), esc(c.surface_detail || c.surface)]);
+      if (c.rules) lines.push([t("d.rules"), esc(c.rules)]);
 
       const amenities = Array.isArray(c.amenities) ? c.amenities.filter(Boolean).slice(0, 8) : [];
 
@@ -376,8 +381,8 @@
 
       return `
         <header class="drawer-head">
-          <h2>On file</h2>
-          <button class="drawer-close" data-close aria-label="Close">×</button>
+          <h2>${t("court.head")}</h2>
+          <button class="drawer-close" data-close aria-label="${t("close.a")}" data-i18n-attr="aria-label:close.a">×</button>
         </header>
         <div class="drawer-body">
           <div class="court-name">${name}</div>
@@ -393,8 +398,8 @@
           ${amenities.length ? `<div class="chips">${amenities.map((a) => `<span class="am">${esc(a)}</span>`).join("")}</div>` : ""}
           ${contact.length ? `<div class="contact-row">${contact.join("")}</div>` : ""}
           <div class="court-actions">
-            <a class="btn-ghost" href="${mailLink}">Spot a mistake? Correct this court</a>
-            <span class="hint">Hand-checked by the people who play here.</span>
+            <a class="btn-ghost" href="${mailLink}">${t("c.correct")}</a>
+            <span class="hint">${t("c.hint")}</span>
           </div>
         </div>`;
     }
@@ -420,7 +425,7 @@
           e.preventDefault();
           const v = input.value.trim();
           if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) {
-            msg.textContent = "That email doesn't look right — try again.";
+            msg.textContent = t("join.bad");
             msg.classList.add("error");
             return;
           }
@@ -429,11 +434,11 @@
           if (endpoint) {
             fetch(endpoint, { method: "POST", headers: { Accept: "application/json" },
               body: new URLSearchParams({ email: v }) })
-              .then(() => { msg.textContent = "You're in. One email when the map opens."; input.value = ""; })
-              .catch(() => { msg.textContent = "Couldn't save that — send us a line: " + CONTACT; });
+              .then(() => { msg.textContent = t("join.ok"); input.value = ""; })
+              .catch(() => { msg.textContent = t("join.err") + " " + CONTACT; });
           } else {
             window.location.href = `mailto:${CONTACT}?subject=${encodeURIComponent("Get the map first")}&body=${encodeURIComponent(v)}`;
-            msg.textContent = "Opening your mail app — plug a real endpoint later (see main.js TODO).";
+            msg.textContent = t("join.mail");
           }
         });
       }
@@ -495,9 +500,9 @@
       const slice = list.slice(0, 8);
       if (!slice.length) {
         const q = state.q.trim() || "[name] — [city]";
-        panel.innerHTML = `<div class="result-empty">No court matches that yet.
-          <a href="mailto:${CONTACT}?subject=${encodeURIComponent("Court addition: " + q)}">Send it to us</a>
-          — it goes on file within days.</div>`;
+        panel.innerHTML = `<div class="result-empty">${t("se.miss")}
+          <a href="mailto:${CONTACT}?subject=${encodeURIComponent("Court addition: " + q)}">${t("se.link")}</a>
+          ${t("se.tail")}</div>`;
         return;
       }
       panel.innerHTML = slice.map((c) => `
@@ -507,8 +512,8 @@
             <div class="result-places">${c.city}, ${c.country}</div>
           </div>
           <div class="result-meta">
-            ${c.has_lights ? '<span class="result-tag public">lit</span>' : ""}
-            <span class="result-tag ${c.court_type}">${c.court_type}</span>
+            ${c.has_lights ? `<span class="result-tag public">${t("s.lit")}</span>` : ""}
+            <span class="result-tag ${c.court_type}">${typeT(c.court_type)}</span>
             <span class="result-tag num">${c.num_courts}</span>
           </div>
         </button>`).join("");
@@ -629,6 +634,9 @@
     World.zoomButtons();
     World.sway();
 
+    // the Court Desk (assets/suite.js) reads this — publish the loaded list
+    window.SANDSPOT_COURTS_LIST = COURTS;
+
     document.querySelectorAll("[data-courts-tracked]").forEach((n) => (n.textContent = COURTS.length));
 
     // hint bar: one line of instruction, gone at the first touch
@@ -639,6 +647,13 @@
       window.addEventListener("wheel", off, { once: true, passive: true });
       setTimeout(off, 15000); // safety: dismiss even if nobody ever touches
     }
+
+    // language switch: re-fall dynamic content, then recount interpolation
+    document.addEventListener("sandspot:lang", () => {
+      Panels.close();
+      Search.update();
+    });
+    window.SandSpotI18N && window.SandSpotI18N.refresh && window.SandSpotI18N.refresh();
 
     Search.update();
     splash();

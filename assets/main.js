@@ -55,12 +55,12 @@
     return out;
   }
 
+  const FIELD = "id,name,city,country,court_type,num_courts,latitude,longitude,has_lights,price_per_hour,description,rules,opening_hours,phone,website,amenities,surface_detail,views,booking_url,address,surface";
+
   async function loadCourts() {
     try {
       const r = await Promise.race([
-        fetch(`${SUPA.url}/rest/v1/courts?select=${encodeURIComponent(
-          "id,name,city,country,court_type,num_courts,latitude,longitude,has_lights,price_per_hour"
-        )}&status=eq.approved`, {
+        fetch(`${SUPA.url}/rest/v1/courts?select=${encodeURIComponent(FIELD)}&status=eq.approved`, {
           headers: { apikey: SUPA.key, Authorization: `Bearer ${SUPA.key}` },
         }),
         new Promise((_, rej) => setTimeout(() => rej(new Error("slow")), 4000)),
@@ -93,7 +93,8 @@
       return { x: (cx - ox) / s, y: (cy - oy) / s };
     };
     const clamp = (k, tx, ty) => {
-      const minTx = -VW * (k - 1) / k, minTy = -VH * (k - 1) / k;
+      // pan must be able to reach the far edges of the world, not just half-way
+      const minTx = -VW * (k - 1), minTy = -VH * (k - 1);
       return { k, tx: Math.min(0, Math.max(minTx, tx)), ty: Math.min(0, Math.max(minTy, ty)) };
     };
 
@@ -164,7 +165,7 @@
     /* --- grab / drag --- */
     let dragging = null;
     function onGrabStart(e) {
-      svg.setPointerCapture(e.pointerId);
+      try { svg.setPointerCapture(e.pointerId); } catch (_) { /* pointer already released */ }
       dragging = { x: e.clientX, y: e.clientY, tx: cam.tx, ty: cam.ty, id: e.pointerId };
       stopFlight();
       document.querySelector("#mapbox").classList.add("dragging");
@@ -205,7 +206,7 @@
       const cx = VW * (0.5 - sx); // sx>0 nudges the point away from the right drawer
       const wantT = { tx: cx - vp.x * kk, ty: VH * 0.5 - vp.y * kk };
       const n = clamp(kk, wantT.tx, wantT.ty);
-      if (RM) { cam.k = n.k; cam.tx = n.tx; cam.ty = n.ty; apply(); return; }
+      if (RM || document.hidden) { cam.k = n.k; cam.tx = n.tx; cam.ty = n.ty; apply(); return; }
       const from = { ...cam }, to = n, t0 = performance.now();
       const ease = (t) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
       const tick = (now) => {
@@ -242,12 +243,12 @@
     });
 
     /* idle sway: the world breathes when nobody touches it */
-    let swayRAF = null, lastTouch = 0;
+    let swayRAF = null, lastTouch = 0, swayBlocked = false;
     function sway() {
-      if (RM || swayRAF) return;
+      if (RM || !root || swayRAF || swayBlocked) return;
       const t0 = performance.now();
       const tick = (now) => {
-        if (performance.now() - lastTouch < 4500) { swayRAF = null; return; }
+        if (performance.now() - lastTouch < 4500 || swayBlocked) { swayRAF = null; return; }
         const t = (now - t0) / 1000;
         const dx = Math.sin(t * 0.32) * 4, dy = Math.cos(t * 0.21) * 3;
         root.setAttribute("transform",
@@ -263,8 +264,10 @@
         if (swayRAF) { cancelAnimationFrame(swayRAF); swayRAF = null; setTimeout(sway, 5000); }
       }, { passive: true });
     }
+    function pauseSway() { swayBlocked = true; if (swayRAF) { cancelAnimationFrame(swayRAF); swayRAF = null; } if (root) apply(); }
+    function resumeSway() { swayBlocked = false; lastTouch = 0; sway(); }
 
-    return { build, zoomButtons, fit, flyToPoint, zoomTo, sway };
+    return { build, zoomButtons, fit, flyToPoint, zoomTo, sway, pauseSway, resumeSway };
   })();
 
   /* ============================================================
@@ -299,6 +302,8 @@
       backdrop.hidden = false;
       backdrop.classList.add("open");
       current = name;
+      document.body.classList.add("map-dimmed");
+      if (World.pauseSway) World.pauseSway();
       const f = d.querySelector("input, button:not([data-close])");
       if (f) setTimeout(() => f.focus({ preventScroll: true }), 260);
     }
@@ -315,34 +320,92 @@
       if (backdropTimer) clearTimeout(backdropTimer);
       backdropTimer = setTimeout(() => { backdrop.hidden = true; backdropTimer = null; }, 320);
       current = null;
+      document.body.classList.remove("map-dimmed");
+      clearPins();
+      if (World.resumeSway) World.resumeSway();
     }
 
-    function openCourt(c) {
-      const d = drawers.court;
-      d.innerHTML = `
+    /* selection: exactly one lit pin while a court panel is open */
+    function selectPin(c) {
+      document.querySelectorAll("#worldMap .mk.sel").forEach((n) => n.classList.remove("sel"));
+      const mk = document.querySelector(`#worldMap .mk[data-id="${courtKey(c)}"]`);
+      if (mk) mk.classList.add("sel");
+    }
+    function clearPins() {
+      document.querySelectorAll("#worldMap .mk.sel").forEach((n) => n.classList.remove("sel"));
+    }
+
+    const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
+
+    function courtHTML(c) {
+      const name = esc(c.name);
+      const place = esc(`${c.city}, ${c.country}`);
+      const mailLink = `mailto:${CONTACT}?subject=${encodeURIComponent("About the record: " + c.name + " (" + c.city + ")")}`;
+
+      // rating — no rating column yet: honest empty state, five hollow stars
+      const stars = `<div class="rate">
+        <span class="stars" aria-hidden="true">${"★★★★★".split("").map(() => '<i>★</i>').join("")}</span>
+        <span class="rate-note">Not rated yet — reviews land with the next build</span>
+      </div>`;
+
+      // photos — none on file: three slots, one actionable
+      const photos = `<div class="photo-row">
+        ${[0,1,2].map((i) => `<div class="photo-slot"><span>photo ${i+1}</span></div>`).join("")}
+      </div>
+      <p class="photo-note">No photos on file. <a href="mailto:${CONTACT}?subject=${encodeURIComponent("Photos: " + c.name + " (" + c.city + ")")}">Send one</a> and it becomes the cover.</p>`;
+
+      const rows = [];
+      rows.push(`<div class="meta-cell wide"><div class="k">Where exactly</div><div class="v">${esc(c.address || c.city)}</div></div>`);
+      rows.push(`<div class="meta-cell"><div class="k">Sand courts</div><div class="v">${c.num_courts ?? "?"}</div></div>`);
+      rows.push(`<div class="meta-cell"><div class="k">Access</div><div class="v">${esc(c.court_type || "public")}</div></div>`);
+      rows.push(`<div class="meta-cell"><div class="k">Night lights</div><div class="v">${c.has_lights ? "Yes" : "—"}</div></div>`);
+      rows.push(`<div class="meta-cell"><div class="k">Price</div><div class="v">${c.price_per_hour != null ? "$" + c.price_per_hour + "/h" : "Free"}</div></div>`);
+      rows.push(`<div class="meta-cell"><div class="k">Checked on file</div><div class="v">${c.views ?? 0}×</div></div>`);
+
+      const lines = [];
+      if (c.opening_hours) lines.push(["Hours", esc(c.opening_hours)]);
+      if (c.surface_detail || c.surface) lines.push(["Surface", esc(c.surface_detail || c.surface)]);
+      if (c.rules) lines.push(["House rules", esc(c.rules)]);
+
+      const amenities = Array.isArray(c.amenities) ? c.amenities.filter(Boolean).slice(0, 8) : [];
+
+      const contact = [];
+      if (c.phone) contact.push(`<a class="contact-item" href="tel:${esc(String(c.phone).replace(/\s+/g, ""))}">📞 ${esc(c.phone)}</a>`);
+      if (c.website) contact.push(`<a class="contact-item" href="${esc(c.website)}" target="_blank" rel="noopener">🌐 Site</a>`);
+      if (c.booking_url) contact.push(`<a class="contact-item" href="${esc(c.booking_url)}" target="_blank" rel="noopener">🎟 Book directly</a>`);
+
+      return `
         <header class="drawer-head">
           <h2>On file</h2>
           <button class="drawer-close" data-close aria-label="Close">×</button>
         </header>
         <div class="drawer-body">
-          <div class="court-name">${c.name}</div>
-          <div class="court-place">${c.city}, ${c.country}</div>
+          <div class="court-name">${name}</div>
+          <div class="court-place">${place}</div>
+          ${stars}
+          ${photos}
           <div class="court-meta">
-            <div class="meta-cell"><div class="k">Sand courts</div><div class="v">${c.num_courts ?? "?"}</div></div>
-            <div class="meta-cell"><div class="k">Access</div><div class="v">${c.court_type || "public"}</div></div>
-            <div class="meta-cell"><div class="k">Night lights</div><div class="v">${c.has_lights ? "Yes" : "—"}</div></div>
-            <div class="meta-cell"><div class="k">Price</div><div class="v">${c.price_per_hour != null ? "$" + c.price_per_hour + "/h" : "Free"}</div></div>
+            ${rows.join("\n")}
           </div>
+          ${c.description ? `<p class="court-desc">${esc(c.description)}</p>` : ""}
+          ${lines.length ? `<div class="detail-list">${lines.map(([k, v]) => `
+            <div class="detail-row"><div class="k">${k}</div><div class="v">${v}</div></div>`).join("")}</div>` : ""}
+          ${amenities.length ? `<div class="chips">${amenities.map((a) => `<span class="am">${esc(a)}</span>`).join("")}</div>` : ""}
+          ${contact.length ? `<div class="contact-row">${contact.join("")}</div>` : ""}
           <div class="court-actions">
-            <a class="btn-ghost" href="mailto:${CONTACT}?subject=${encodeURIComponent("Correction: " + c.name + " (" + c.city + ")")}">
-              Spot a mistake? Correct this court
-            </a>
+            <a class="btn-ghost" href="${mailLink}">Spot a mistake? Correct this court</a>
             <span class="hint">Hand-checked by the people who play here.</span>
           </div>
         </div>`;
+    }
+
+    function openCourt(c) {
+      const d = drawers.court;
+      d.innerHTML = courtHTML(c);
       // the × button is brand-new every open — wire it now, not once at boot
       d.querySelectorAll("[data-close]").forEach((b) => b.addEventListener("click", close));
       open("court");
+      selectPin(c); // after open(): open()→close() would otherwise clear it
     }
 
     function staticInit(d) {
@@ -487,9 +550,9 @@
   })();
 
   /* ============================================================
-     SPLASH — ball becomes the world, then hands it over
+     SPLASH — ball becomes the world, then hands it over.
+     Plays on every visit: it is the brand statement, and it is short.
      ============================================================ */
-  const SPLASH_SEEN = "sandspot-splash-seen";
 
   function drawSplashMap(svg) {
     svg.innerHTML = "";
@@ -513,11 +576,9 @@
   }
 
   function splash() {
-    const seen = sessionStorage.getItem(SPLASH_SEEN) === "1";
     const stage = document.getElementById("splash");
     if (!stage) { armApp(); return; }
-    if (RM || !hasGSAP || seen) { stage.remove(); armApp(); return; }
-    sessionStorage.setItem(SPLASH_SEEN, "1");
+    if (RM || !hasGSAP) { stage.remove(); armApp(); return; }
 
     const svg = document.getElementById("splashMap");
     gsap.set(svg, { opacity: 0 });
@@ -569,6 +630,15 @@
     World.sway();
 
     document.querySelectorAll("[data-courts-tracked]").forEach((n) => (n.textContent = COURTS.length));
+
+    // hint bar: one line of instruction, gone at the first touch
+    const hint = document.getElementById("hintbar");
+    if (hint) {
+      const off = () => hint.classList.add("off");
+      window.addEventListener("pointerdown", off, { once: true });
+      window.addEventListener("wheel", off, { once: true, passive: true });
+      setTimeout(off, 15000); // safety: dismiss even if nobody ever touches
+    }
 
     Search.update();
     splash();

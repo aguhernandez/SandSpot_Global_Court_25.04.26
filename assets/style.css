@@ -179,6 +179,52 @@ body::after {
   pointer-events: none;
 }
 
+/* hint bar — the only instruction on screen, then it dissolves */
+.hintbar {
+  position: fixed;
+  left: 50%;
+  bottom: 98px;
+  transform: translateX(-50%);
+  z-index: 35;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: .04em;
+  color: rgba(255,255,255,.7);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .5s ease;
+}
+.hintbar .he {
+  padding: 7px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(9,22,34,.55);
+  backdrop-filter: blur(6px);
+}
+.hintbar .hb-dot { color: rgba(255,255,255,.3); }
+.app-live .hintbar { opacity: 1; transition: opacity .7s ease .5s; }
+.hintbar.off { opacity: 0 !important; transition: opacity .45s ease 0s !important; }
+
+/* the pin you're reading about — lit ring, steady pulse */
+#worldMap .mk.sel circle.mc {
+  fill: #ffd166;
+  stroke: rgba(255,241,204,.9);
+  stroke-width: 2px;
+  animation: selpulse 1.6s ease-in-out infinite;
+}
+@keyframes selpulse {
+  0%, 100% { stroke-opacity: .9; }
+  50% { stroke-opacity: .15; }
+}
+
+/* panels stack over a quieter world */
+.mapbox { transition: filter .5s var(--ease-out); }
+body.map-dimmed .mapbox { filter: brightness(.78) saturate(.92); }
+
 /* =============================================================
    SEARCH DOCK
    ============================================================= */
@@ -366,6 +412,36 @@ body::after {
   color: var(--chalk);
 }
 .court-place { color: rgba(255,255,255,.6); font-size: 15px; margin-top: 6px; }
+
+/* rating strip — honest hollow until reviews land */
+.rate { display: flex; align-items: center; gap: 10px; margin-top: 14px; }
+.stars { display: inline-flex; gap: 2px; }
+.stars i {
+  font-style: normal;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(255,181,36,.55);
+  font-size: 15px;
+  letter-spacing: 2px;
+}
+.rate-note { font-size: 12.5px; color: rgba(255,255,255,.45); }
+
+/* photos: the empty slots invite the community in */
+.photo-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 18px; }
+.photo-slot {
+  aspect-ratio: 4/3;
+  border: 1.5px dashed rgba(255,255,255,.22);
+  border-radius: 12px;
+  display: grid; place-items: center;
+  color: rgba(255,255,255,.3);
+  font-size: 11.5px;
+  letter-spacing: .08em;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.03) 0 48%, transparent 50% 100%),
+    repeating-linear-gradient(-45deg, rgba(255,255,255,.02) 0 6px, transparent 6px 12px);
+}
+.photo-note { margin-top: 10px; font-size: 12.5px; color: rgba(255,255,255,.42); }
+.photo-note a { color: rgba(255,181,36,.9); font-weight: 650; text-decoration: underline; text-underline-offset: 3px; }
+
 .court-meta {
   margin-top: 20px;
   display: grid;
@@ -378,8 +454,54 @@ body::after {
   border-radius: 12px;
   padding: 12px 14px;
 }
+.meta-cell.wide { grid-column: 1 / -1; }
 .meta-cell .k { font-size: 11.5px; font-weight: 700; color: rgba(255,255,255,.45); letter-spacing: .06em; }
-.meta-cell .v { font-size: 16.5px; font-weight: 700; color: var(--chalk); margin-top: 2px; }
+.meta-cell .v { font-size: 16px; font-weight: 700; color: var(--chalk); margin-top: 2px; }
+
+.court-desc {
+  margin-top: 18px;
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: rgba(255,255,255,.72);
+  border-left: 2px solid rgba(255,181,36,.4);
+  padding-left: 14px;
+}
+.detail-list { margin-top: 18px; }
+.detail-row {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid rgba(255,255,255,.08);
+  font-size: 13.5px;
+}
+.detail-row .k { color: rgba(255,255,255,.42); font-weight: 700; font-size: 11.5px; letter-spacing: .05em; padding-top: 2px; white-space: nowrap; }
+.detail-row .v { color: rgba(255,255,255,.8); }
+
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.am {
+  font-size: 11.5px; font-weight: 650;
+  padding: 5px 12px;
+  border-radius: 999px;
+  color: rgba(255,255,255,.7);
+  border: 1px solid rgba(255,255,255,.16);
+  background: rgba(255,255,255,.04);
+}
+
+.contact-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+.contact-item {
+  font-size: 13.5px;
+  font-weight: 650;
+  color: var(--chalk);
+  text-decoration: none;
+  border: 1px solid rgba(255,255,255,.2);
+  background: rgba(255,255,255,.05);
+  padding: 9px 16px;
+  border-radius: 999px;
+  transition: border-color .15s ease, background .15s ease;
+}
+.contact-item:hover { border-color: rgba(255,181,36,.6); background: rgba(255,181,36,.08); }
+
 .court-actions { margin-top: 24px; display: flex; flex-direction: column; gap: 10px; }
 .court-actions .hint { font-size: 13px; color: rgba(255,255,255,.4); }
 
@@ -529,6 +651,7 @@ body::after {
   .topbar-hud { display: none; }
   .zoomer { bottom: 150px; }
   .dock { bottom: 10px; }
+  .hintbar { display: none; }
   .drawer { width: 100vw; top: auto; bottom: 0; max-height: 78vh; border-left: 0;
     border-top: 1px solid var(--line); border-radius: 18px 18px 0 0;
     transform: translateY(105%); }

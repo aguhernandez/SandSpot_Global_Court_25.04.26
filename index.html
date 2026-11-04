@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SandSpot — Every beach volleyball court in the world. One map.</title>
+  <meta name="description" content="SandSpot is building the global registry of beach volleyball courts — public sand, club courts, hidden hotel setups. Search what we have on file today; soon you book, play and compete." />
+  <meta property="og:title" content="SandSpot — the global registry of beach volleyball courts" />
+  <meta property="og:description" content="The world's beach volleyball courts, written down. 76 on file and growing — search them today." />
+  <meta property="og:type" content="website" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+
+  <!-- ================= HERO : ball becomes the world ============ -->
+  <section class="hero" id="top" aria-label="SandSpot — global court registry">
+
+    <div class="hero-world" aria-hidden="true">
+      <svg id="heroMap" viewBox="0 0 1000 520" role="img" aria-label="Dotted world map showing tracked beach volleyball courts"></svg>
+    </div>
+
+    <div class="ball-stage" aria-hidden="true">
+      <div class="splash-ball"></div>
+    </div>
+
+    <div class="hero-inner">
+      <header class="topbar">
+        <a class="brand" href="#top">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <span class="brand-name">SandSpot</span>
+        </a>
+        <nav class="topnav" aria-label="Page navigation">
+          <a href="#why">Why courts</a>
+          <a href="#registry">The registry</a>
+          <a href="#roadmap">Roadmap</a>
+          <a class="topnav-cta" href="#join">Get the map first</a>
+        </nav>
+      </header>
+
+      <h1 class="hero-title">
+        <span class="t-line">Every court</span>
+        <span class="t-line">in the world.</span>
+        <span class="t-line">One map.</span>
+      </h1>
+
+      <div class="hero-search">
+        <div class="search-shell">
+          <div class="search-bar">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" stroke="#14293d" stroke-width="2.2"/>
+              <path d="M16.5 16.5 21 21" stroke="#14293d" stroke-width="2.2" stroke-linecap="round"/>
+            </svg>
+            <label class="visually-hidden" for="search-input">Search courts</label>
+            <input id="search-input" type="search" autocomplete="off"
+                   placeholder="Search a city, a beach, a country" />
+            <button class="search-btn" type="button" id="search-btn">Find courts</button>
+          </div>
+          <div class="search-filters" role="group" aria-label="Filters">
+            <button class="chip" type="button" data-filter="public"><span class="dot" aria-hidden="true"></span>Public sand</button>
+            <button class="chip" type="button" data-filter="partner"><span class="dot" aria-hidden="true"></span>Partner venues</button>
+            <button class="chip" type="button" data-filter="lights"><span class="dot" aria-hidden="true"></span>Night lights</button>
+            <button class="chip" type="button" data-filter="free"><span class="dot" aria-hidden="true"></span>Free entry</button>
+          </div>
+          <div class="search-results" id="search-results" hidden></div>
+        </div>
+      </div>
+
+      <div class="hero-metade">
+        <p class="court-count" aria-live="polite">
+          <strong data-courts-tracked>76</strong> courts on file — hand-checked,
+          one city at a time. The registry grows every week.
+        </p>
+      </div>
+    </div>
+
+    <div class="net-divider" aria-hidden="true"></div>
+  </section>
+
+  <!-- ================= THE WHY ================================= -->
+  <section class="why" id="why" aria-labelledby="why-title">
+    <h2 class="why-statement" id="why-title" data-wipe>
+      Finding sand in a new city shouldn't depend on knowing a local.
+    </h2>
+    <p class="why-body" data-reveal>
+      Today it does. Players ask around. Locals know two or three courts and
+      keep the rest to themselves. Clubs list hours nowhere, cities bury them
+      in PDFs, hotel courts never make it online at all. The courts already
+      exist — <strong>they are just not written down anywhere.</strong>
+    </p>
+    <p class="why-body" data-reveal>
+      SandSpot is writing them down. One registry, every court, checked by the
+      people who play on them. What you searched above is the registry working
+      today — small, real, and growing.
+    </p>
+  </section>
+
+  <!-- ================= THE MAP ================================= -->
+  <section class="map-section" id="map" aria-labelledby="map-title">
+    <div class="map-inner">
+      <h2 class="map-heading" id="map-title">The world, being written down.</h2>
+      <p class="map-note">Every dot below the equator or above it is a place where
+      the game is played. The bright ones are courts already on file.</p>
+
+      <div class="map-counter">
+        <span class="num" id="map-count">0</span>
+        <span class="label">courts on file, on this map</span>
+      </div>
+
+      <div class="map-stage">
+        <svg id="worldMap" viewBox="0 0 1000 520" role="img" aria-label="World map brightening as courts are registered"></svg>
+      </div>
+
+      <p class="map-pin-note">Thousands more tracked, importing now. When your city lights up, it's yours to check — you will be able to correct what we got wrong.</p>
+    </div>
+  </section>
+
+  <!-- ================= THE LEDGER ============================== -->
+  <section class="registry" id="registry" aria-labelledby="registry-title">
+    <div class="registry-head">
+      <h2 class="registry-title" id="registry-title">Open records</h2>
+      <p class="registry-note">A few of the hand-checked ones.</p>
+    </div>
+
+    <div class="ledger">
+      <table class="ledger-table">
+        <thead>
+          <tr>
+            <th scope="col">Court</th>
+            <th scope="col">City</th>
+            <th scope="col" class="num">Sand courts</th>
+            <th scope="col">Access</th>
+            <th scope="col">Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Praia de Copacabana</td>
+            <td>Rio de Janeiro, BR</td>
+            <td class="num">12</td>
+            <td><span class="tag tag-public">Public</span></td>
+            <td>The beach that gave the sport its world stage</td>
+          </tr>
+          <tr>
+            <td>Beach Arena</td>
+            <td>Prague, CZ</td>
+            <td class="num">12</td>
+            <td><span class="tag tag-partner">Partner</span></td>
+            <td>Largest set in the country, on an island</td>
+          </tr>
+          <tr>
+            <td>Kitsilano Beach</td>
+            <td>Vancouver, CA</td>
+            <td class="num">10</td>
+            <td><span class="tag tag-public">Public</span></td>
+            <td>City park courts, north-shore views</td>
+          </tr>
+          <tr>
+            <td>Montrose Beach</td>
+            <td>Chicago, USA</td>
+            <td class="num">10</td>
+            <td><span class="tag tag-public">Public</span></td>
+            <td>The lakefront crowd, summer till late</td>
+          </tr>
+          <tr>
+            <td>Beach Mitte</td>
+            <td>Munich, DE</td>
+            <td class="num">10</td>
+            <td><span class="tag tag-partner">Partner</span></td>
+            <td>Club courts, bookable by the hour</td>
+          </tr>
+          <tr>
+            <td>Kite Beach Volleyball</td>
+            <td>Dubai, AE</td>
+            <td class="num">6</td>
+            <td><span class="tag tag-public">Public</span></td>
+            <td>Lit until 11pm, food trucks</td>
+          </tr>
+          <tr class="ledger-more">
+            <td colspan="5" data-courts-pipeline>70 more on file now — and the next few thousand are loading in.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================= ROADMAP ================================= -->
+  <section class="roadmap" id="roadmap" aria-labelledby="roadmap-title">
+    <h2 class="roadmap-title" id="roadmap-title">Where this goes</h2>
+
+    <ol class="roadmap-rows">
+      <li class="roadmap-row" data-reveal>
+        <div class="roadmap-status">Today</div>
+        <div class="roadmap-line"><strong>The registry.</strong> We track and verify courts; the record grows every week. Corrections welcome — the players know best.</div>
+      </li>
+      <li class="roadmap-row" data-reveal>
+        <div class="roadmap-status">Next</div>
+        <div class="roadmap-line"><strong>The map, everywhere.</strong> Search any city and see the sand before you book a flight. Full court pages: photos, hours, rules.</div>
+      </li>
+      <li class="roadmap-row" data-reveal>
+        <div class="roadmap-status">Then</div>
+        <div class="roadmap-line"><strong>The game.</strong> Book court time, find players at your level, run tournaments. The playing layer comes after the map earns trust.</div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- ================= JOIN ==================================== -->
+  <section class="join" id="join" aria-labelledby="join-title">
+    <h2 class="join-title" id="join-title">Get the map first</h2>
+    <p class="join-sub">One email when the map opens wider. Court additions welcome sooner — they are what makes the map worth opening.</p>
+
+    <form class="join-form" id="join-form" novalidate>
+      <div class="join-fields">
+        <label class="visually-hidden" for="join-email">Your email</label>
+        <input id="join-email" name="email" type="email" autocomplete="email"
+               placeholder="you@wherever.com" required />
+        <button type="submit">Join</button>
+      </div>
+      <p class="form-msg" role="status" aria-live="polite"></p>
+    </form>
+
+    <p class="join-courts">
+      Know a court we don't?
+      <a href="mailto:hello@sandspot.app?subject=Court%20addition%20for%20the%20registry">Send it to us</a>.
+      It takes a minute, and the registry stays free.
+    </p>
+  </section>
+
+  <!-- ================= FOOTER ================================== -->
+  <footer class="footer">
+    <div class="footer-brand">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span class="brand-name">SandSpot</span>
+      <span class="footer-tag">the global registry of beach volleyball courts</span>
+    </div>
+    <nav class="footer-nav" aria-label="Footer">
+      <a href="#why">Why courts</a>
+      <a href="#map">The map</a>
+      <a href="#registry">Open records</a>
+      <a href="mailto:hello@sandspot.app">Say hello</a>
+    </nav>
+    <p class="footer-small">Built by players. &copy; <span data-year>2026</span> SandSpot.</p>
+  </footer>
+
+  <!-- precomputed world (2485 land dots) — no runtime geodata needed -->
+  <script src="data/world-dots.js"></script>
+
+  <!-- motion engines (graceful: page renders complete without them) -->
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+
+  <script src="assets/main.js"></script>
+</body>
+</html>

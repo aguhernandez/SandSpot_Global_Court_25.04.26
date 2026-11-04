@@ -281,16 +281,22 @@
     };
     let current = null;
 
+    // closing: timers cancelled on re-open so a fast pin → panel → close → panel
+    // sequence never gets whacked by a stale hidden=true
+    const hideTimers = {};
+    let backdropTimer = null;
+
     function open(name) {
       close();
       const d = drawers[name];
       if (!d) return;
       staticInit(d);
+      if (hideTimers[name]) { clearTimeout(hideTimers[name]); hideTimers[name] = null; }
+      if (backdropTimer) { clearTimeout(backdropTimer); backdropTimer = null; }
       d.hidden = false;
       void d.offsetWidth; // force reflow — works even when the tab is hidden (rAF-throttled)
       d.classList.add("open");
       backdrop.hidden = false;
-      void backdrop.offsetWidth;
       backdrop.classList.add("open");
       current = name;
       const f = d.querySelector("input, button:not([data-close])");
@@ -302,10 +308,12 @@
         const d = drawers[key];
         if (!d || d.hidden) continue;
         d.classList.remove("open");
-        setTimeout(() => { d.hidden = true; }, 480);
+        if (hideTimers[key]) clearTimeout(hideTimers[key]);
+        hideTimers[key] = setTimeout(() => { d.hidden = true; hideTimers[key] = null; }, 480);
       }
       backdrop.classList.remove("open");
-      setTimeout(() => { backdrop.hidden = true; }, 320);
+      if (backdropTimer) clearTimeout(backdropTimer);
+      backdropTimer = setTimeout(() => { backdrop.hidden = true; backdropTimer = null; }, 320);
       current = null;
     }
 
@@ -329,9 +337,11 @@
             <a class="btn-ghost" href="mailto:${CONTACT}?subject=${encodeURIComponent("Correction: " + c.name + " (" + c.city + ")")}">
               Spot a mistake? Correct this court
             </a>
-            <span class="hint">Hand-checked by the people who play here. Registered <span data-copyright>2026</span>.</span>
+            <span class="hint">Hand-checked by the people who play here.</span>
           </div>
         </div>`;
+      // the × button is brand-new every open — wire it now, not once at boot
+      d.querySelectorAll("[data-close]").forEach((b) => b.addEventListener("click", close));
       open("court");
     }
 

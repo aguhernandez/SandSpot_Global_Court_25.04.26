@@ -41,11 +41,14 @@
 
   let COURTS = [];
   let ACCENTS = [];
-  const UID = Math.random().toString(36).slice(2);
+  // fallback suffix when a record has no id at all — mutable because the
+  // COURT_INDEX collision loop bumps it (never happens with the census ids)
+  let UID = Math.random().toString(36).slice(2);
   const courtKey = (c) =>
-    `c${String(c.id || "").replace(/[^a-zA-Z0-9]/g, "").slice(0, 8) || UID}`;
+    `c${String(c.id || "").replace(/[^a-zA-Z0-9]/g, "") || UID}`;
 
   const COURT_INDEX = new window.Map();
+  const placeOf = (c) => [c.city, c.country, c.region].filter(Boolean).slice(0, 2).join(", ") || "—";
 
   function pickAccents(courts, max) {
     const byNum = [...courts].sort((a, b) => (b.num_courts || 0) - (a.num_courts || 0));
@@ -63,6 +66,23 @@
   const FIELD = "id,name,city,country,court_type,num_courts,latitude,longitude,has_lights,price_per_hour,description,rules,opening_hours,phone,website,amenities,surface_detail,views,booking_url,address,surface";
 
   async function loadCourts() {
+    // Base layer: the gathered census (data/courts-all.json, scripts/import-courts.py).
+    let base = [];
+    try {
+      const r = await fetch("data/courts-all.json");
+      if (r.ok) { const d = await r.json(); if (Array.isArray(d)) base = d; }
+    } catch (_) { /* file:// */ }
+    if (!base.length) {
+      // older build without the census import
+      try {
+        const r = await fetch("data/courts-live.json");
+        if (r.ok) { const d = await r.json(); if (Array.isArray(d)) return d; }
+      } catch (_) {}
+      return [];
+    }
+
+    // Verified layer: Supabase approved records fill gaps and append new ones.
+    let live = [];
     try {
       const r = await Promise.race([
         fetch(`${SUPA.url}/rest/v1/courts?select=${encodeURIComponent(FIELD)}&status=eq.approved`, {
@@ -70,13 +90,39 @@
         }),
         new Promise((_, rej) => setTimeout(() => rej(new Error("slow")), 4000)),
       ]);
-      if (r.ok) { const d = await r.json(); if (Array.isArray(d) && d.length) return d; }
-    } catch (_) { /* fall through */ }
-    try {
-      const r = await fetch("data/courts-live.json");
-      if (r.ok) { const d = await r.json(); if (Array.isArray(d)) return d; }
-    } catch (_) { /* file:// */ }
-    return [];
+      if (r.ok) { const d = await r.json(); if (Array.isArray(d)) live = d; }
+    } catch (_) { /* sandbox / offline */ }
+    if (!live.length) {
+      try {
+        const r = await fetch("data/courts-live.json"); // mirror of approved records
+        if (r.ok) { const d = await r.json(); if (Array.isArray(d)) live = d; }
+      } catch (_) {}
+    }
+    if (!live.length) return base;
+
+    const norm = (s) => (s ?? "").toString().toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/united states( of america)?|^usa$|e\.?u\.?u\.?/g, " usa ")
+      .replace(/[^a-z0-9]+/g, " ").trim();
+    const key = (c) => `${norm(c.name)}|${norm(c.city)}|${norm(c.country)}`;
+    const map = new Map();
+    for (const c of base) map.set(key(c), c);
+    for (const s of live) {
+      const hit = map.get(key(s));
+      if (hit) {
+        for (const f of FIELD.split(",")) {
+          const v = s[f];
+          if (v !== null && v !== undefined && v !== "" &&
+              (hit[f] === null || hit[f] === undefined || hit[f] === "")) hit[f] = v;
+        }
+        hit.verified = true;      // approved beats unverified flags
+      } else {
+        const c = { ...s, tier: s.tier || "documented", verified: true };
+        base.push(c);
+        map.set(key(c), c);
+      }
+    }
+    return base;
   }
 
   /* ============================================================
@@ -104,13 +150,50 @@
     };
 
     let root = null, pinsRoot = null;
+    let pins = [];              // { el, in, x, y, h, k } sorted by x — culling list
+    let lastLo = 0, lastHi = 0, lastInvKey = ""; // shown window / last counter-scale
 
     function apply() {
       root.setAttribute("transform", `translate(${cam.tx} ${cam.ty}) scale(${cam.k})`);
+      cull();
+    }
+
+    /* Culling: the pin list is kept sorted by x, so the visible slice is a
+       contiguous run found by binary search. Only what crosses the window
+       edge gets display toggles, and the counter-scale attribute is only
+       rewritten when the zoom factor actually changed. Thousands of pins
+       pan at 60fps without touching the DOM beyond the edge effects. */
+    function cull() {
+      if (!pins.length) return;
+      const { s, ox, oy, r } = pxScale();
+      const M = 40; // px margin so edge pins don't pop hard
+      const x0 = ((-ox) / s - cam.tx) / cam.k - M / (s * cam.k);
+      const x1 = ((r.width - ox) / s - cam.tx) / cam.k + M / (s * cam.k);
+      let lo = 0, hi = pins.length;
+      while (lo < hi) {
+        const m = (lo + hi) >> 1;
+        if (pins[m].x < x0) lo = m + 1; else hi = m;
+      }
+      let i = lo;
+      while (i < pins.length && pins[i].x <= x1) i++;
       const inv = 1 / cam.k;
-      pinsRoot.querySelectorAll(".mk").forEach((mk) => {
-        mk.querySelector(".mk-in").setAttribute("transform", `scale(${inv})`);
-      });
+      const invKey = inv.toFixed(3);
+      for (let j = lo; j < i; j++) {
+        const p = pins[j];
+        if (p.h) { p.el.style.display = ""; p.h = false; }
+        if (p.k !== invKey) { p.in.setAttribute("transform", `scale(${inv})`); p.k = invKey; }
+      }
+      // hide the part of the previous window that no longer shows
+      for (let j = lastLo; j < Math.min(lastHi, lo); j++) {
+        const p = pins[j];
+        if (!p.h) { p.el.style.display = "none"; p.h = true; }
+      }
+      for (let j = Math.max(i, lastLo); j < lastHi; j++) {
+        const p = pins[j];
+        if (!p.h) { p.el.style.display = "none"; p.h = true; }
+      }
+      lastLo = lo; lastHi = i;
+      lastInvKey = invKey;
     }
 
     function build(geoDots, courtList, accents) {
@@ -122,11 +205,13 @@
       root.appendChild(geo);
 
       pinsRoot = el("g", { class: "pins" });
+      pins = [];
       const accentSet = new Set(accents);
       const add = (c, big, label) => {
+        const x = X(c.longitude), y = YW(c.latitude);
         const g = el("g", {
           class: "mk" + (big ? " accent" : ""), "data-id": courtKey(c),
-          transform: `translate(${X(c.longitude).toFixed(1)} ${YW(c.latitude).toFixed(1)})`,
+          transform: `translate(${x.toFixed(1)} ${y.toFixed(1)})`,
         });
         const inner = el("g", { class: "mk-in" });
         const hit = el("circle", { class: "hit", r: big ? 11 : 9, fill: "transparent" });
@@ -139,9 +224,17 @@
         }
         g.appendChild(inner);
         pinsRoot.appendChild(g);
+        pins.push({ el: g, in: inner, x, y, h: false, k: null });
       };
-      for (const c of courtList) { if (accentSet.has(c)) continue; add(c, false, false); }
+      for (const c of courtList) {
+        if (accentSet.has(c)) continue;
+        // records without coordinates stay in the registry but off the map
+        if (!Number.isFinite(c.latitude) || !Number.isFinite(c.longitude)) continue;
+        add(c, false, false);
+      }
       accents.forEach((c, i) => add(c, true, i < 5));
+      pins.sort((a, b) => a.x - b.x);
+      lastLo = 0; lastHi = 0; lastInvKey = "";
       root.appendChild(pinsRoot);
       svg.appendChild(root);
 
@@ -258,8 +351,7 @@
         const dx = Math.sin(t * 0.32) * 4, dy = Math.cos(t * 0.21) * 3;
         root.setAttribute("transform",
           `translate(${cam.tx + dx} ${cam.ty + dy}) scale(${cam.k})`);
-        const inv = 1 / cam.k;
-        pinsRoot.querySelectorAll(".mk .mk-in").forEach((mk) => mk.setAttribute("transform", `scale(${inv})`));
+        cull();
         swayRAF = requestAnimationFrame(tick);
       };
       lastTouch = performance.now();
@@ -344,7 +436,7 @@
 
     function courtHTML(c) {
       const name = esc(c.name);
-      const place = esc(`${c.city}, ${c.country}`);
+      const place = esc(placeOf(c));
       const mailLink = `mailto:${CONTACT}?subject=${encodeURIComponent("About the record: " + c.name + " (" + c.city + ")")}`;
 
       // rating — no rating column yet: honest empty state, five hollow stars
@@ -364,8 +456,11 @@
       rows.push(`<div class="meta-cell"><div class="k">${t("c.courts")}</div><div class="v">${c.num_courts ?? "?"}</div></div>`);
       rows.push(`<div class="meta-cell"><div class="k">${t("c.access")}</div><div class="v">${typeT(c.court_type || "public")}</div></div>`);
       rows.push(`<div class="meta-cell"><div class="k">${t("c.lights")}</div><div class="v">${c.has_lights ? t("c.yes") : "—"}</div></div>`);
-      rows.push(`<div class="meta-cell"><div class="k">${t("c.price")}</div><div class="v">${c.price_per_hour != null ? "$" + c.price_per_hour + "/h" : t("c.free")}</div></div>`);
-      rows.push(`<div class="meta-cell"><div class="k">${t("c.checked")}</div><div class="v">${c.views ?? 0}×</div></div>`);
+      // price only when the source states a fee/number — never claim "free"
+      rows.push(`<div class="meta-cell"><div class="k">${t("c.price")}</div><div class="v">${c.price_per_hour != null ? "$" + c.price_per_hour + "/h" : "—"}</div></div>`);
+      if (c.views != null) {
+        rows.push(`<div class="meta-cell"><div class="k">${t("c.checked")}</div><div class="v">${c.views}×</div></div>`);
+      }
 
       const lines = [];
       if (c.opening_hours) lines.push([t("d.hours"), esc(c.opening_hours)]);
@@ -387,6 +482,7 @@
         <div class="drawer-body">
           <div class="court-name">${name}</div>
           <div class="court-place">${place}</div>
+          ${c.tier === "candidate" ? `<div class="cand-chip">${t("c.candidate")}</div>` : ""}
           ${stars}
           ${photos}
           <div class="court-meta">
@@ -399,7 +495,7 @@
           ${contact.length ? `<div class="contact-row">${contact.join("")}</div>` : ""}
           <div class="court-actions">
             <a class="btn-ghost" href="${mailLink}">${t("c.correct")}</a>
-            <span class="hint">${t("c.hint")}</span>
+            <span class="hint">${c.tier === "candidate" ? t("c.candHint") : t("c.hint")}</span>
           </div>
         </div>`;
     }
@@ -487,7 +583,7 @@
     const state = { q: "", types: new Set(), lights: false };
 
     const norm = (s) => (s || "").toLowerCase().replace(/united states/g, "usa");
-    const tokens = (q) => q.toLowerCase().split(/[^a-z0-9áéíóúüñç]+/).filter(Boolean);
+    const tokens = (q) => q.toLowerCase().split(/[^a-z0-9áéíóúüñçа-яё]+/).filter(Boolean);
 
     const matches = (c) => {
       const hay = norm(`${c.name} ${c.city} ${c.country}`);
@@ -509,12 +605,13 @@
         <button class="result-row" type="button" data-id="${courtKey(c)}">
           <div>
             <div class="result-name">${c.name}</div>
-            <div class="result-places">${c.city}, ${c.country}</div>
+            <div class="result-places">${placeOf(c)}</div>
           </div>
           <div class="result-meta">
+            ${c.tier === "candidate" ? `<span class="result-tag cand">${t("c.candidate")}</span>` : ""}
             ${c.has_lights ? `<span class="result-tag public">${t("s.lit")}</span>` : ""}
             <span class="result-tag ${c.court_type}">${typeT(c.court_type)}</span>
-            <span class="result-tag num">${c.num_courts}</span>
+            <span class="result-tag num">${c.num_courts ?? "?"}</span>
           </div>
         </button>`).join("");
       panel.querySelectorAll(".result-row").forEach((row) => {
@@ -522,8 +619,13 @@
           const c = COURT_INDEX.get(row.dataset.id);
           if (!c) return;
           panel.hidden = true;
-          World.flyToPoint({ x: X(c.longitude), y: YW(c.latitude) }, 2.4, 900, 0.16);
-          setTimeout(() => Panels.openCourt(c), RM ? 0 : 780);
+          // records without coordinates open their record without a flight
+          if (Number.isFinite(c.latitude) && Number.isFinite(c.longitude)) {
+            World.flyToPoint({ x: X(c.longitude), y: YW(c.latitude) }, 2.4, 900, 0.16);
+            setTimeout(() => Panels.openCourt(c), RM ? 0 : 780);
+          } else {
+            Panels.openCourt(c);
+          }
         });
       });
     }
@@ -620,7 +722,9 @@
      ============================================================ */
   async function main() {
     COURTS = await loadCourts();
-    ACCENTS = pickAccents(COURTS, 9);
+    // accents need coordinates — restrict the pool to pin-able records
+    ACCENTS = pickAccents(COURTS.filter((c) =>
+      Number.isFinite(c.latitude) && Number.isFinite(c.longitude)), 9);
 
     COURT_INDEX.clear();
     const seen = new Set();

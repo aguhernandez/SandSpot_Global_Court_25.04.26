@@ -1,0 +1,711 @@
+{
+ "generated": "2026-11-05",
+ "corpus": "user census ~/Downloads/sandspot",
+ "files_used": [
+  {
+   "file": "altas_documentadas_lote05 (1).csv",
+   "tier": "documented",
+   "rows": 28
+  },
+  {
+   "file": "altas_documentadas_nuevas (1).csv",
+   "tier": "documented",
+   "rows": 23
+  },
+  {
+   "file": "altas_nuevas_para_importar (1).csv",
+   "tier": "documented",
+   "rows": 95
+  },
+  {
+   "file": "altas_nuevas_solo (1).csv",
+   "tier": "documented",
+   "rows": 69
+  },
+  {
+   "file": "beach_volley_andes_caribe_lote_08_candidatos (1).csv",
+   "tier": "candidate",
+   "rows": 48
+  },
+  {
+   "file": "beach_volley_andes_caribe_lote_08_censo_completo (1).csv",
+   "tier": "documented",
+   "rows": 64
+  },
+  {
+   "file": "beach_volley_andes_caribe_lote_08_gps (1).geojson",
+   "tier": "documented",
+   "rows": 10
+  },
+  {
+   "file": "beach_volley_andes_caribe_lote_08_importacion_validada (1).csv",
+   "tier": "documented",
+   "rows": 33
+  },
+  {
+   "file": "beach_volley_centroamerica_caribe_lote_09_AMPLIADO_134 (1).csv",
+   "tier": "documented",
+   "rows": 134
+  },
+  {
+   "file": "beach_volley_centroamerica_caribe_lote_09_candidatos.csv",
+   "tier": "candidate",
+   "rows": 31
+  },
+  {
+   "file": "beach_volley_centroamerica_caribe_lote_09_censo_documentado.csv",
+   "tier": "documented",
+   "rows": 79
+  },
+  {
+   "file": "beach_volley_chile_paraguay_lote_06 (1).csv",
+   "tier": "documented",
+   "rows": 40
+  },
+  {
+   "file": "beach_volley_chile_paraguay_lote_06.geojson",
+   "tier": "documented",
+   "rows": 4
+  },
+  {
+   "file": "beach_volley_estados_unidos_lote_11_candidatos.csv",
+   "tier": "candidate",
+   "rows": 48
+  },
+  {
+   "file": "beach_volley_estados_unidos_lote_11_documentados.csv",
+   "tier": "documented",
+   "rows": 252
+  },
+  {
+   "file": "beach_volley_europa_lote_02 (1).csv",
+   "tier": "documented",
+   "rows": 168
+  },
+  {
+   "file": "beach_volley_europa_lote_02.geojson",
+   "tier": "documented",
+   "rows": 107
+  },
+  {
+   "file": "beach_volley_europa_lote_02_reforzado (1).csv",
+   "tier": "documented",
+   "rows": 237
+  },
+  {
+   "file": "beach_volley_europa_lote_02_reforzado.geojson",
+   "tier": "documented",
+   "rows": 121
+  },
+  {
+   "file": "beach_volley_europa_lote_03 (1).csv",
+   "tier": "documented",
+   "rows": 140
+  },
+  {
+   "file": "beach_volley_europa_lote_03.geojson",
+   "tier": "documented",
+   "rows": 12
+  },
+  {
+   "file": "beach_volley_lote_10_GPS_mejorado.csv",
+   "tier": "documented",
+   "rows": 162
+  },
+  {
+   "file": "beach_volley_lote_11_GPS_mejorado.csv",
+   "tier": "documented",
+   "rows": 252
+  },
+  {
+   "file": "beach_volley_lotes_10_11_GPS_COMBINADO.csv",
+   "tier": "documented",
+   "rows": 414
+  },
+  {
+   "file": "beach_volley_mexico_canada_lote_10_candidatos.csv",
+   "tier": "candidate",
+   "rows": 46
+  },
+  {
+   "file": "beach_volley_mexico_canada_lote_10_documentados.csv",
+   "tier": "documented",
+   "rows": 162
+  },
+  {
+   "file": "beach_volley_middle_east_lote_14_candidates_EN.csv",
+   "tier": "candidate",
+   "rows": 44
+  },
+  {
+   "file": "beach_volley_middle_east_lote_14_documented_EN.csv",
+   "tier": "documented",
+   "rows": 99
+  },
+  {
+   "file": "beach_volley_middle_east_lote_14_legacy_33.csv",
+   "tier": "documented",
+   "rows": 99
+  },
+  {
+   "file": "beach_volley_mundo_lote_01 (1).csv",
+   "tier": "documented",
+   "rows": 50
+  },
+  {
+   "file": "beach_volley_mundo_lote_01.geojson",
+   "tier": "documented",
+   "rows": 50
+  },
+  {
+   "file": "beach_volley_oceania_lote_13_candidatos (1).csv",
+   "tier": "candidate",
+   "rows": 15
+  },
+  {
+   "file": "beach_volley_oceania_lote_13_documentados (1).csv",
+   "tier": "documented",
+   "rows": 82
+  },
+  {
+   "file": "beach_volley_rusia_lote_12_candidatos.csv",
+   "tier": "candidate",
+   "rows": 27
+  },
+  {
+   "file": "beach_volley_rusia_lote_12_documentados.csv",
+   "tier": "documented",
+   "rows": 138
+  },
+  {
+   "file": "catalogo_documentado (1).csv",
+   "tier": "documented",
+   "rows": 74
+  },
+  {
+   "file": "maestro_lote03_continuacion (1).csv",
+   "tier": "documented",
+   "rows": 271
+  },
+  {
+   "file": "mapa_GPS.geojson",
+   "tier": "documented",
+   "rows": 15
+  },
+  {
+   "file": "mapa_GPS_lote04_mas_01_sin_duplicados.geojson",
+   "tier": "documented",
+   "rows": 10
+  },
+  {
+   "file": "mapa_gps_coordenadas_con_fuente (1).geojson",
+   "tier": "documented",
+   "rows": 11
+  },
+  {
+   "file": "argentina.csv",
+   "tier": "documented",
+   "rows": 59
+  },
+  {
+   "file": "beach_volley_europa_paises_pequenos_lote_16_candidates.csv",
+   "tier": "candidate",
+   "rows": 0
+  },
+  {
+   "file": "beach_volley_europa_paises_pequenos_lote_16_gps_PROVISIONAL.geojson",
+   "tier": "documented",
+   "rows": 30
+  },
+  {
+   "file": "beach_volley_europa_paises_pequenos_lote_16_venues.csv",
+   "tier": "documented",
+   "rows": 70
+  },
+  {
+   "file": "beach_volley_europa_paises_pequenos_suiza_lote_16_REVISADO_GPS_PROVISIONAL.geojson",
+   "tier": "documented",
+   "rows": 30
+  },
+  {
+   "file": "beach_volley_europa_paises_pequenos_suiza_lote_16_REVISADO_candidates.csv",
+   "tier": "candidate",
+   "rows": 0
+  },
+  {
+   "file": "beach_volley_europa_paises_pequenos_suiza_lote_16_REVISADO_venues.csv",
+   "tier": "documented",
+   "rows": 211
+  },
+  {
+   "file": "beach_volley_middle_east_lote_14_GPS.geojson",
+   "tier": "documented",
+   "rows": 2
+  },
+  {
+   "file": "gps_fuente.csv",
+   "tier": "documented",
+   "rows": 7
+  },
+  {
+   "file": "instalaciones_recientes_para_revision.csv",
+   "tier": "documented",
+   "rows": 27
+  },
+  {
+   "file": "mapa_gps_con_fuente.geojson",
+   "tier": "documented",
+   "rows": 7
+  },
+  {
+   "file": "uruguay.csv",
+   "tier": "documented",
+   "rows": 15
+  }
+ ],
+ "files_skipped": [
+  {
+   "file": "actualizaciones_legacy.csv",
+   "why": "byte-duplicate of actualizaciones_legacy (1).csv"
+  },
+  {
+   "file": "altas_documentadas_lote05.csv",
+   "why": "byte-duplicate of altas_documentadas_lote05 (1).csv"
+  },
+  {
+   "file": "altas_documentadas_nuevas.csv",
+   "why": "byte-duplicate of altas_documentadas_nuevas (1).csv"
+  },
+  {
+   "file": "altas_nuevas_para_importar.csv",
+   "why": "byte-duplicate of altas_nuevas_para_importar (1).csv"
+  },
+  {
+   "file": "altas_nuevas_solo.csv",
+   "why": "byte-duplicate of altas_nuevas_solo (1).csv"
+  },
+  {
+   "file": "beach_volley_andes_caribe_lote_08_candidatos.csv",
+   "why": "byte-duplicate of beach_volley_andes_caribe_lote_08_candidatos (1).csv"
+  },
+  {
+   "file": "beach_volley_andes_caribe_lote_08_censo_completo.csv",
+   "why": "byte-duplicate of beach_volley_andes_caribe_lote_08_censo_completo (1).csv"
+  },
+  {
+   "file": "beach_volley_andes_caribe_lote_08_gps.geojson",
+   "why": "byte-duplicate of beach_volley_andes_caribe_lote_08_gps (1).geojson"
+  },
+  {
+   "file": "beach_volley_andes_caribe_lote_08_importacion_validada.csv",
+   "why": "byte-duplicate of beach_volley_andes_caribe_lote_08_importacion_validada (1).csv"
+  },
+  {
+   "file": "beach_volley_argentina_uruguay_lote_04.xlsx",
+   "why": "byte-duplicate of beach_volley_argentina_uruguay_lote_04 (1).xlsx"
+  },
+  {
+   "file": "beach_volley_centroamerica_caribe_lote_09.xlsx",
+   "why": "byte-duplicate of beach_volley_centroamerica_caribe_lote_09 (1).xlsx"
+  },
+  {
+   "file": "beach_volley_centroamerica_caribe_lote_09_AMPLIADO_134.csv",
+   "why": "byte-duplicate of beach_volley_centroamerica_caribe_lote_09_AMPLIADO_134 (1).csv"
+  },
+  {
+   "file": "beach_volley_chile_paraguay_lote_06.csv",
+   "why": "byte-duplicate of beach_volley_chile_paraguay_lote_06 (1).csv"
+  },
+  {
+   "file": "beach_volley_estados_unidos_lote_11.xlsx",
+   "why": "byte-duplicate of beach_volley_estados_unidos_lote_11 (1).xlsx"
+  },
+  {
+   "file": "beach_volley_europa_lote_02.csv",
+   "why": "byte-duplicate of beach_volley_europa_lote_02 (1).csv"
+  },
+  {
+   "file": "beach_volley_europa_lote_02.xlsx",
+   "why": "byte-duplicate of beach_volley_europa_lote_02 (1).xlsx"
+  },
+  {
+   "file": "beach_volley_europa_lote_02_reforzado.csv",
+   "why": "byte-duplicate of beach_volley_europa_lote_02_reforzado (1).csv"
+  },
+  {
+   "file": "beach_volley_europa_lote_02_reforzado.xlsx",
+   "why": "byte-duplicate of beach_volley_europa_lote_02_reforzado (1).xlsx"
+  },
+  {
+   "file": "beach_volley_europa_lote_03.csv",
+   "why": "byte-duplicate of beach_volley_europa_lote_03 (1).csv"
+  },
+  {
+   "file": "beach_volley_europa_lote_03.xlsx",
+   "why": "byte-duplicate of beach_volley_europa_lote_03 (1).xlsx"
+  },
+  {
+   "file": "beach_volley_lote_03_censo_reforzado.xlsx",
+   "why": "byte-duplicate of beach_volley_lote_03_censo_reforzado (1).xlsx"
+  },
+  {
+   "file": "beach_volley_lote_03_continuacion.xlsx",
+   "why": "byte-duplicate of beach_volley_lote_03_continuacion (1).xlsx"
+  },
+  {
+   "file": "beach_volley_mundo_lote_01.csv",
+   "why": "byte-duplicate of beach_volley_mundo_lote_01 (1).csv"
+  },
+  {
+   "file": "beach_volley_mundo_lote_01.xlsx",
+   "why": "byte-duplicate of beach_volley_mundo_lote_01 (1).xlsx"
+  },
+  {
+   "file": "beach_volley_oceania_lote_13_candidatos.csv",
+   "why": "byte-duplicate of beach_volley_oceania_lote_13_candidatos (1).csv"
+  },
+  {
+   "file": "beach_volley_oceania_lote_13_cobertura.csv",
+   "why": "byte-duplicate of beach_volley_oceania_lote_13_cobertura (1).csv"
+  },
+  {
+   "file": "beach_volley_oceania_lote_13_documentados.csv",
+   "why": "byte-duplicate of beach_volley_oceania_lote_13_documentados (1).csv"
+  },
+  {
+   "file": "catalogo_documentado.csv",
+   "why": "byte-duplicate of catalogo_documentado (1).csv"
+  },
+  {
+   "file": "maestro_lote03_continuacion.csv",
+   "why": "byte-duplicate of maestro_lote03_continuacion (1).csv"
+  },
+  {
+   "file": "mapa_gps_coordenadas_con_fuente.geojson",
+   "why": "byte-duplicate of mapa_gps_coordenadas_con_fuente (1).geojson"
+  },
+  {
+   "file": "beach_volley_argentina_uruguay_lote_04.xlsx",
+   "why": "byte-duplicate of beach_volley_argentina_uruguay_lote_04 (1).xlsx"
+  },
+  {
+   "file": "beach_volley_europa_paises_pequenos_lote_16.xlsx",
+   "why": "byte-duplicate of beach_volley_europa_paises_pequenos_lote_16.xlsx"
+  },
+  {
+   "file": "beach_volley_europa_paises_pequenos_suiza_lote_16_REVISADO.xlsx",
+   "why": "byte-duplicate of beach_volley_europa_paises_pequenos_suiza_lote_16_REVISADO.xlsx"
+  },
+  {
+   "file": "beach_volley_middle_east_lote_14_candidates_EN.csv",
+   "why": "byte-duplicate of beach_volley_middle_east_lote_14_candidates_EN.csv"
+  },
+  {
+   "file": "beach_volley_middle_east_lote_14_documented_EN.csv",
+   "why": "byte-duplicate of beach_volley_middle_east_lote_14_documented_EN.csv"
+  },
+  {
+   "file": "beach_volley_middle_east_lote_14_legacy_33.csv",
+   "why": "byte-duplicate of beach_volley_middle_east_lote_14_legacy_33.csv"
+  },
+  {
+   "file": "catalogo_documentado.csv",
+   "why": "byte-duplicate of catalogo_documentado (1).csv"
+  },
+  {
+   "file": "mapa_GPS_lote04_mas_01_sin_duplicados.geojson",
+   "why": "byte-duplicate of mapa_GPS_lote04_mas_01_sin_duplicados.geojson"
+  },
+  {
+   "file": "actualizaciones_legacy (1).csv",
+   "why": "excluded by policy"
+  },
+  {
+   "file": "beach_volley_andes_caribe_lote_08.xlsx",
+   "why": "no parsable data rows"
+  },
+  {
+   "file": "beach_volley_argentina_uruguay_lote_04 (1).xlsx",
+   "why": "no parsable data rows"
+  },
+  {
+   "file": "beach_volley_argentina_uruguay_lote_04_auditado_20261028.xlsx",
+   "why": "excluded by policy"
+  },
+  {
+   "file": "beach_volley_centroamerica_caribe_lote_09 (1).xlsx",
+   "why": "no parsable data rows"
+  },
+  {
+   "file": "beach_volley_centroamerica_caribe_lote_09_cobertura.csv",
+   "why": "excluded by policy"
+  },
+  {
+   "file": "beach_volley_chile_paraguay_lote_06_FINAL.xlsx",
+   "why": "no parsable data rows"
+  },
+  {
+   "file": "beach_volley_estados_unidos_lote_11 (1).xlsx",
+   "why": "no parsable data rows"
+  },
+  {
+   "file": "beach_volley_estados_unidos_lote_11_contactos_reservas.csv",
+   "why": "excluded by policy"
+  },
+  {
+   "file": "beach_volley_europa_lote_02 (1).xlsx",
+   "why": "no parsable data rows"
+  },
+  {
+   "file": "beach_volley_europa_lote_02_reforzado (1).xlsx",
+   "why": "no parsable data rows"
+  },
+  {
+   "file": "beach_volley_europa_lote_03 (1).xlsx",
+   "why": "no parsable data rows"
+  },
+  {
+   "file": "beach_volley_europa_paises_pequenos_lote_16.xlsx",
+   "why": "no parsable data rows"
+  },
+  {
+   "file": "beach_volley_europa_paises_pequenos_suiza_lote_16_REVISADO.xlsx",
+   "why": "no parsable data rows"
+  },
+  {
+   "file": "beach_volley_lote_03_censo_reforzado (1).xlsx",
+   "why": "no parsable data rows"
+  },
+  {
+   "file": "beach_volley_lote_03_continuacion (1).xlsx",
+   "why": "no parsable data rows"
+  },
+  {
+   "file": "beach_volley_mexico_canada_eeuu_REVISION_GPS_lotes_10_11.xlsx",
+   "why": "no parsable data rows"
+  },
+  {
+   "file": "beach_volley_mexico_canada_lote_10.xlsx",
+   "why": "no parsable data rows"
+  },
+  {
+   "file": "beach_volley_mexico_canada_lote_10_cobertura.csv",
+   "why": "excluded by policy"
+  },
+  {
+   "file": "beach_volley_mundo_lote_01 (1).xlsx",
+   "why": "no parsable data rows"
+  },
+  {
+   "file": "beach_volley_oceania_lote_13.xlsx",
+   "why": "no parsable data rows"
+  },
+  {
+   "file": "beach_volley_oceania_lote_13_cobertura (1).csv",
+   "why": "excluded by policy"
+  },
+  {
+   "file": "beach_volley_rusia_lote_12.xlsx",
+   "why": "no parsable data rows"
+  },
+  {
+   "file": "beach_volley_rusia_lote_12_cobertura.csv",
+   "why": "excluded by policy"
+  },
+  {
+   "file": "beach_volley_middle_east_lote_14.xlsx",
+   "why": "no parsable data rows"
+  }
+ ],
+ "raw_rows": 4331,
+ "records_built": 0,
+ "duplicates_merged": 2205,
+ "candidates_promoted": 38,
+ "coord_swapped": 0,
+ "coord_dropped": 0,
+ "coords_missing": 1626,
+ "dropped_permanently_closed": 0,
+ "lights_from_text": 22,
+ "warnings": [],
+ "totals": {
+  "courts": 2017,
+  "raw_rows": 4331,
+  "records_built": 4222,
+  "merged": 2205,
+  "tombstones": 3,
+  "by_tier": {
+   "documented": 1803,
+   "candidate": 214
+  }
+ },
+ "countries": {
+  "united states": 307,
+  "canada": 148,
+  "switzerland": 137,
+  "italia": 126,
+  "russia": 108,
+  "francia": 100,
+  "alemania": 86,
+  "argentina": 79,
+  "australia": 63,
+  "mexico": 62,
+  "reino unido": 40,
+  "espana": 35,
+  "iceland": 30,
+  "colombia": 29,
+  "chile": 25,
+  "suecia": 24,
+  "uruguay": 24,
+  "paises bajos": 22,
+  "turkey": 22,
+  "peru": 20,
+  "venezuela": 20,
+  "cyprus": 19,
+  "nueva zelanda": 19,
+  "cuba": 18,
+  "noruega": 18,
+  "dinamarca": 17,
+  "israel": 17,
+  "egypt": 16,
+  "paraguay": 15,
+  "portugal": 15,
+  "costa rica": 13,
+  "united arab emirates": 13,
+  "austria": 12,
+  "ecuador": 12,
+  "luxembourg": 12,
+  "qatar": 12,
+  "iran": 11,
+  "republica dominicana": 11,
+  "lebanon": 10,
+  "guadalupe": 9,
+  "puerto rico": 9,
+  "panama": 8,
+  "saudi arabia": 8,
+  "belice": 7,
+  "jamaica": 7,
+  "liechtenstein": 7,
+  "nicaragua": 7,
+  "islas turcas y caicos": 6,
+  "aland islands": 5,
+  "aruba": 5,
+  "brasil": 5,
+  "guatemala": 5,
+  "martinica": 5,
+  "oman": 5,
+  "andorra": 4,
+  "antigua y barbuda": 4,
+  "granada": 4,
+  "honduras": 4,
+  "kuwait": 4,
+  "santa lucia": 4,
+  "bahamas": 3,
+  "bahrain": 3,
+  "barbados": 3,
+  "curazao": 3,
+  "el salvador": 3,
+  "fiyi": 3,
+  "islas caiman": 3,
+  "jordan": 3,
+  "palestine": 3,
+  "sint maarten parte neerlandesa": 3,
+  "vanuatu": 3,
+  "anguila": 2,
+  "bermudas": 2,
+  "bonaire": 2,
+  "haiti": 2,
+  "iraq": 2,
+  "islas cook": 2,
+  "islas virgenes britanicas": 2,
+  "islas virgenes de ee uu": 2,
+  "japon": 2,
+  "kosovo": 2,
+  "letonia": 2,
+  "montenegro": 2,
+  "polinesia francesa": 2,
+  "san bartolome": 2,
+  "san marino": 2,
+  "san martin parte francesa": 2,
+  "san vicente y las granadinas": 2,
+  "syria": 2,
+  "trinidad y tobago": 2,
+  "yemen": 2,
+  "cabo verde": 1,
+  "dominica": 1,
+  "egipto": 1,
+  "filipinas": 1,
+  "gibraltar": 1,
+  "guam": 1,
+  "islas marianas del norte": 1,
+  "islas salomon": 1,
+  "jersey": 1,
+  "kazajistan": 1,
+  "kenia": 1,
+  "maldivas": 1,
+  "malta": 1,
+  "montserrat": 1,
+  "nueva caledonia": 1,
+  "papua nueva guinea": 1,
+  "polonia": 1,
+  "samoa": 1,
+  "san cristobal y nieves": 1,
+  "seychelles": 1,
+  "singapur": 1,
+  "sri lanka": 1,
+  "sudafrica": 1,
+  "suiza": 1,
+  "tonga": 1
+ },
+ "countries_with_coords": {
+  "alemania": 69,
+  "united states": 47,
+  "russia": 41,
+  "iceland": 30,
+  "canada": 29,
+  "noruega": 16,
+  "espana": 15,
+  "argentina": 12,
+  "austria": 12,
+  "mexico": 12,
+  "brasil": 5,
+  "peru": 5,
+  "australia": 4,
+  "costa rica": 4,
+  "ecuador": 4,
+  "francia": 4,
+  "paraguay": 4,
+  "portugal": 4,
+  "dinamarca": 3,
+  "italia": 3,
+  "reino unido": 3,
+  "suecia": 3,
+  "guadalupe": 2,
+  "japon": 2,
+  "letonia": 2,
+  "paises bajos": 2,
+  "puerto rico": 2,
+  "barbados": 1,
+  "bermudas": 1,
+  "cabo verde": 1,
+  "chile": 1,
+  "colombia": 1,
+  "cuba": 1,
+  "cyprus": 1,
+  "egipto": 1,
+  "filipinas": 1,
+  "guatemala": 1,
+  "islas virgenes britanicas": 1,
+  "kazajistan": 1,
+  "kenia": 1,
+  "maldivas": 1,
+  "nueva zelanda": 1,
+  "oman": 1,
+  "polonia": 1,
+  "seychelles": 1,
+  "singapur": 1,
+  "sri lanka": 1,
+  "sudafrica": 1,
+  "suiza": 1
+ },
+ "note": "candidates are imported as tier=candidate only; they never override documented values; empty stays empty"
+}

@@ -50,6 +50,9 @@
   /* courts access (main.js publishes the live list)                */
   /* ------------------------------------------------------------ */
   const courts = () => window.SANDSPOT_COURTS_LIST || [];
+  // booking layer: only verified courts are bookable; census candidates
+  // stay visible to search but never enter the slot machine
+  const bookingCourts = () => courts().filter((c) => c.verified !== false);
   const courtKey = (c) =>
     "c" + String(c.id || "").replace(/[^a-zA-Z0-9]/g, "").slice(0, 8);
   const courtById = (id) => courts().find((c) => courtKey(c) === id);
@@ -144,7 +147,7 @@
     await ensure("jugador@sandspot.app", "player", "Player Demo");
     // grant the venue account the top courts so its console has teeth
     if (!store.owners.length) {
-      [...courts()]
+      [...bookingCourts()]
         .sort((a, b) => (b.num_courts || 0) - (a.num_courts || 0))
         .slice(0, 4)
         .forEach((c) => store.owners.push({ email: "sede@sandspot.app", id: courtKey(c) }));
@@ -375,7 +378,7 @@
 
   /* player: pick court, pick day, grab a slot */
   function playerView() {
-    const list = courts();
+    const list = bookingCourts();
     if (!list.length) return `<p class="suite-note">Loading sand…</p>`;
     if (!ui.courtId) ui.courtId = courtKey(list[0]);
     const opts = [...list]
@@ -412,7 +415,7 @@
 
   /* venue owner: hours + the bookings on my sand */
   function venueView() {
-    const owned = courts().filter((c) => owns(sess.email, courtKey(c)));
+    const owned = bookingCourts().filter((c) => owns(sess.email, courtKey(c)));
     if (!owned.length)
       return `<p class="suite-note">No venues granted yet. Ask an admin to grant them, or use the demo login: sede@sandspot.app / ${DEMO_PASS}.</p>`;
     if (!ui.vCourtId) ui.vCourtId = courtKey(owned[0]);
@@ -450,7 +453,7 @@
 
   /* admin: overview, grants, everything */
   function adminView() {
-    const opts = [...courts()]
+    const opts = [...bookingCourts()]
       .sort((a, b) => (a.name + a.city).localeCompare(b.name + b.city))
       .map((c) => `<option value="${courtKey(c)}">${courtLabel(c)}</option>`).join("");
     const users = store.users.map((u) => `<div class="suite-item">
@@ -471,7 +474,7 @@
       .join("") || `<p class="suite-note">${t("suite.none")}</p>`;
     return `
       <div class="suite-stats">
-        <div class="stat"><div class="n">${courts().length}</div><div class="k">${t("hud.on")}</div></div>
+        <div class="stat"><div class="n">${bookingCourts().length}</div><div class="k">${t("hud.on")}</div></div>
         <div class="stat"><div class="n">${store.bookings.length}</div><div class="k">bookings</div></div>
         <div class="stat"><div class="n">${store.users.length}</div><div class="k">accounts</div></div>
       </div>

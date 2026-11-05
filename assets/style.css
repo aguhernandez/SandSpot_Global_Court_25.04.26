@@ -342,6 +342,21 @@ body::after {
 .btn-ghost.danger { border-color: rgba(255,109,74,.4); color: #ff9d7a; }
 .btn-ghost.danger:hover { background: rgba(255,109,74,.08); border-color: rgba(255,109,74,.6); }
 
+/* census candidate badge — stays visually separate from verified records */
+.cand-chip {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 3px 11px;
+  border: 1px dashed rgba(255,181,36,.55);
+  color: var(--sun, #ffb524);
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.result-tag.cand { background: transparent; border: 1px dashed rgba(255,181,36,.55); color: var(--sun, #ffb524); }
+
 /* hint bar — the only instruction on screen, then it dissolves */
 .hintbar {
   position: fixed;

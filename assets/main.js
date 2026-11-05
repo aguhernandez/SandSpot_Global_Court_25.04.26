@@ -122,6 +122,26 @@
         map.set(key(c), c);
       }
     }
+
+    // Verification wave layer (scripts/verify-*.py → data/verifications.json):
+    // operator-checked records annotate the census without erasing it.
+    try {
+      const r = await fetch("data/verifications.json");
+      if (r.ok) {
+        const v = await r.json();
+        for (const c of base) {
+          const rec = v[c.id];
+          if (!rec) continue;
+          c.verify_status = rec.status;   // verified | osm | unfound
+          c.verify_source = rec.source || "";
+          c.verify_note = rec.note || "";
+          c.verify_date = rec.date || "";
+          // only operator-checked records are bookable census courts;
+          // OSM-mapped/unfound ones stay searchable but slot-proof
+          c.verified = rec.status === "verified";
+        }
+      }
+    } catch (_) { /* optional layer */ }
     return base;
   }
 
@@ -439,6 +459,16 @@
       const place = esc(placeOf(c));
       const mailLink = `mailto:${CONTACT}?subject=${encodeURIComponent("About the record: " + c.name + " (" + c.city + ")")}`;
 
+      // verification wave badge — states the evidence per record, keeps the
+      // census honest ("verified": operator sources · "osm": OSM-mapped pitch)
+      const vStatus = c.verify_status;
+      const vChip = vStatus
+        ? `<a class="vchip ${vStatus}" ${c.verify_source ? `href="${esc(c.verify_source)}" target="_blank" rel="noopener"` : "href=\"mailto:" + CONTACT + "?subject=" + encodeURIComponent("Verify record: " + c.name) + "\""}>${t("c.ver_" + vStatus)}</a>`
+        : "";
+      const vLine = vStatus && c.verify_note
+        ? `<div class="court-desc vnote">${esc(c.verify_note)}<span class="vdate"> · ${esc(c.verify_date || "")}</span></div>`
+        : "";
+
       // rating — no rating column yet: honest empty state, five hollow stars
       const stars = `<div class="rate">
         <span class="stars" aria-hidden="true">${"★★★★★".split("").map(() => '<i>★</i>').join("")}</span>
@@ -483,6 +513,8 @@
           <div class="court-name">${name}</div>
           <div class="court-place">${place}</div>
           ${c.tier === "candidate" ? `<div class="cand-chip">${t("c.candidate")}</div>` : ""}
+          ${vChip}
+          ${vLine}
           ${stars}
           ${photos}
           <div class="court-meta">

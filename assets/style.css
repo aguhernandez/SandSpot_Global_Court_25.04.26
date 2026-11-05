@@ -357,6 +357,24 @@ body::after {
 }
 .result-tag.cand { background: transparent; border: 1px dashed rgba(255,181,36,.55); color: var(--sun, #ffb524); }
 
+/* verification-wave badge — evidence state per record */
+.vchip {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 3px 11px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+.vchip.verified { border: 1px solid rgba(39,174,96,.55); color: #1c7c44; background: rgba(39,174,96,.08); }
+.vchip.osm { border: 1px solid rgba(66,133,204,.45); color: #3878b8; background: rgba(66,133,204,.07); }
+.vchip.unfound { border: 1px dashed rgba(255,140,66,.6); color: #d3743a; background: transparent; }
+.vnote { margin-top: 10px; font-size: 12.5px; color: var(--dusk, #5c6577); }
+.vdate { opacity: .65; }
+
 /* hint bar — the only instruction on screen, then it dissolves */
 .hintbar {
   position: fixed;

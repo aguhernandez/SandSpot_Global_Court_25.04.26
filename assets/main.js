@@ -582,18 +582,40 @@
     const chips = Array.from(document.querySelectorAll(".chip"));
     const state = { q: "", types: new Set(), lights: false };
 
-    const norm = (s) => (s || "").toLowerCase().replace(/united states/g, "usa");
-    const tokens = (q) => q.toLowerCase().split(/[^a-z0-9áéíóúüñçа-яё]+/).filter(Boolean);
+    // accent-fold everything: "berlin" must find "Berlín", "rode" finds "Röde".
+    // Cyrillic survives NFD untouched, so "пляж" keeps working.
+    const fold = (s) => (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const norm = (s) => fold(s).replace(/united states/g, "usa");
+    const tokens = (q) => fold(q).split(/[^a-z0-9а-яё]+/).filter(Boolean);
 
     const matches = (c) => {
-      const hay = norm(`${c.name} ${c.city} ${c.country}`);
+      const hay = norm(`${c.name} ${c.city} ${c.country} ${c.region}`);
       return tokens(state.q).every((t) => hay.includes(t))
         && (state.types.size === 0 || state.types.has(c.court_type))
         && (!state.lights || !!c.has_lights);
     };
 
+    // relevance: a query for a venue name beats a city-wide flood; inside the
+    // same band the bigger complexes surface first (user asks "berlin" — the
+    // flagship courts are what they came for, street parks come second).
+    const relevance = (c) => {
+      const q = norm(state.q.replace(/^[\s,]+|[\s,]+$/g, ""));
+      if (!q) return 0;
+      const name = norm(c.name);
+      const place = norm(`${c.city || ""} ${c.region || ""}`);
+      let s = 0;
+      if (name === q) s += 4;
+      else if (name.startsWith(q)) s += 3;
+      else if (name.includes(q)) s += 2;
+      if (place.includes(q)) s += 1;
+      s += Math.min((c.num_courts || 0), 30) / 100;
+      return s;
+    };
+
     function rows(list) {
-      const slice = list.slice(0, 8);
+      const MAX = 12;
+      const slice = list.slice(0, MAX);
+      const extra = list.length - slice.length;
       if (!slice.length) {
         const q = state.q.trim() || "[name] — [city]";
         panel.innerHTML = `<div class="result-empty">${t("se.miss")}
@@ -601,6 +623,8 @@
           ${t("se.tail")}</div>`;
         return;
       }
+      const more = extra > 0
+        ? `<div class="result-more">${t("se.more").replace("{n}", String(extra))}</div>` : "";
       panel.innerHTML = slice.map((c) => `
         <button class="result-row" type="button" data-id="${courtKey(c)}">
           <div>
@@ -613,7 +637,7 @@
             <span class="result-tag ${c.court_type}">${typeT(c.court_type)}</span>
             <span class="result-tag num">${c.num_courts ?? "?"}</span>
           </div>
-        </button>`).join("");
+        </button>`).join("") + more;
       panel.querySelectorAll(".result-row").forEach((row) => {
         row.addEventListener("click", () => {
           const c = COURT_INDEX.get(row.dataset.id);
@@ -635,7 +659,11 @@
         rows([...COURTS].sort((a, b) => (b.num_courts || 0) - (a.num_courts || 0)).slice(0, 6));
         return;
       }
-      rows(COURTS.filter(matches));
+      const hit = COURTS.filter(matches).sort((a, b) =>
+        relevance(b) - relevance(a)
+        || (b.num_courts || 0) - (a.num_courts || 0)
+        || norm(a.name).localeCompare(norm(b.name)));
+      rows(hit);
     }
 
     input.addEventListener("input", () => { state.q = input.value; update(); panel.hidden = false; });

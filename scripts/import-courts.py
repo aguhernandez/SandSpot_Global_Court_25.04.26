@@ -599,6 +599,26 @@ def main():
                             continue
                         if norm_country(ra["country"]) != norm_country(rb["country"]):
                             continue
+                        # alias gate first: identical coordinates plus one
+                        # name contained in the other ("Beach 61" vs
+                        # "Beachpark 61 / Beach 61") is the same venue — the
+                        # official brand keeps the shorter name.
+                        na, nb = norm_key(ra["name"]), norm_key(rb["name"])
+                        if (coord_dist(ra, rb) <= 1e-4
+                                and min(len(na), len(nb)) >= 4
+                                and (na in nb or nb in na)):
+                            dst, src = ra, rb
+                            dst_sid, src_sid = ka, kb
+                            if len(na) > len(nb):
+                                dst, src = src, dst
+                                dst_sid, src_sid = src_sid, dst_sid
+                            if src["tier"] == "documented" and dst["tier"] == "candidate":
+                                dst, src = src, dst
+                                dst_sid, src_sid = src_sid, dst_sid
+                            merge_into(dst, src, report)
+                            src["_dead"] = True
+                            dead.add(src_sid)
+                            continue
                         if coord_dist(ra, rb) > 0.004:
                             continue
                         ratio = difflib.SequenceMatcher(
@@ -607,12 +627,16 @@ def main():
                             continue
                         if match_score(ra, rb) < 2.0:
                             continue
-                        # documented survivor first
-                        if rb["tier"] == "documented" and ra["tier"] == "candidate":
-                            ra, rb = rb, ra
-                        merge_into(ra, rb, report)
-                        rb["_dead"] = True
-                        dead.add(kb)
+                        # documented survivor first — sid tracking keeps the
+                        # victim's LIST slot aligned with the dict flag
+                        dst, src = ra, rb
+                        dst_sid, src_sid = ka, kb
+                        if src["tier"] == "documented" and dst["tier"] == "candidate":
+                            dst, src = src, dst
+                            dst_sid, src_sid = src_sid, dst_sid
+                        merge_into(dst, src, report)
+                        src["_dead"] = True
+                        dead.add(src_sid)
 
     final = [r for sid, r in enumerate(survivors) if sid not in dead]
     tombstones = len(dead)

@@ -483,6 +483,14 @@ body.map-dimmed .mapbox { filter: brightness(.78) saturate(.92); }
 .result-places { color: var(--ink-soft); font-size: 13.5px; }
 .result-meta { margin-left: auto; display: flex; gap: 8px; flex: none; }
 .result-tag { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; }
+.result-more {
+  padding: 7px 12px 5px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  color: var(--dusk, #5c6577);
+  text-align: center;
+}
 .result-tag.public  { background: #e0f4e6; color: #1c7c44; }
 .result-tag.partner { background: #fff0d2; color: #92600a; }
 .result-tag.num     { background: #e3eaf2; color: var(--dusk); }

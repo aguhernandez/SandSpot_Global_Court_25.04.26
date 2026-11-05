@@ -519,7 +519,7 @@
  ],
  "raw_rows": 4331,
  "records_built": 0,
- "duplicates_merged": 2205,
+ "duplicates_merged": 2206,
  "candidates_promoted": 38,
  "coord_swapped": 0,
  "coord_dropped": 0,
@@ -528,13 +528,13 @@
  "lights_from_text": 22,
  "warnings": [],
  "totals": {
-  "courts": 2017,
+  "courts": 2016,
   "raw_rows": 4331,
   "records_built": 4222,
-  "merged": 2205,
-  "tombstones": 3,
+  "merged": 2206,
+  "tombstones": 4,
   "by_tier": {
-   "documented": 1803,
+   "documented": 1802,
    "candidate": 214
   }
  },
@@ -545,7 +545,7 @@
   "italia": 126,
   "russia": 108,
   "francia": 100,
-  "alemania": 86,
+  "alemania": 85,
   "argentina": 79,
   "australia": 63,
   "mexico": 62,
@@ -657,7 +657,7 @@
   "tonga": 1
  },
  "countries_with_coords": {
-  "alemania": 69,
+  "alemania": 68,
   "united states": 47,
   "russia": 41,
   "iceland": 30,

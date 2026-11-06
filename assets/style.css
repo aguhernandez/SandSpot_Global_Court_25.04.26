@@ -876,3 +876,29 @@ body.map-dimmed .mapbox { filter: brightness(.78) saturate(.92); }
   .drawer { transition: none; }
   html, body { scroll-behavior: auto; }
 }
+
+/* === MapLibre hand-off: the dotted world fades into OSM/CARTO streets === */
+.glwrap {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .55s ease;
+}
+.glmap { position: absolute; inset: 0; background: #eef1ee; }
+#worldMap { transition: opacity .55s ease; }
+.mapbox.gl-on #worldMap { opacity: 0; pointer-events: none; }
+.mapbox.gl-on .glwrap { opacity: 1; pointer-events: auto; }
+
+/* attribution chip in the same paper language as the rest of the HUD */
+.glmap .maplibregl-ctrl-bottom-left { bottom: 26px; left: 8px; }
+.glmap .maplibregl-ctrl-attrib {
+  background: rgba(255,255,255,.82) !important;
+  border-radius: 6px;
+  box-shadow: 0 1px 4px rgba(28,38,50,.18);
+  font-size: 10px;
+  color: #24303e;
+}
+.glmap .maplibregl-ctrl-attrib a { color: inherit; }
+.glmap canvas { outline: none; }

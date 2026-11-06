@@ -151,8 +151,19 @@
   const World = (() => {
     const svg = document.getElementById("worldMap");
     const cam = { k: 1, tx: 0, ty: 0 };
+    // Dots are the landing identity; MapLibre GL takes the map over at the
+    // first real zoom (K_TAKE ≈ one scroll or one zoom-button click) so
+    // Berlin and Hamburg separate right away instead of collapsing into one
+    // dot. K_MAX is only the fallback ceiling for runs without WebGL, where
+    // the dotted map has to carry the whole range on its own.
     const K_MAX = 7, K_MIN = 1;
+    const K_TAKE = 1.15;   // SVG zoom that hands control to MapLibre (first wheel notch)
     let flight = null;
+
+    // flights finish by deadline: with rAF throttled (background tab, CPU funk)
+    // the ease could freeze mid-air — a token-checked timeout lands the camera
+    // exactly where the flight would end, so state stays coherent
+    let flightSeq = 0;
 
     const pxScale = () => {
       const r = svg.getBoundingClientRect();
@@ -173,10 +184,290 @@
     let pins = [];              // { el, in, x, y, h, k } sorted by x — culling list
     let lastLo = 0, lastHi = 0, lastInvKey = ""; // shown window / last counter-scale
 
+    /* === MapLibre GL hand-off ============================================
+       The dotted map is the identity at the world view. At the first real
+       zoom (K_TAKE) a MapLibre canvas crossfades over it on the same centre
+       point and equivalent zoom: real OSM/CARTO streets underneath, every
+       geolocated court as a clustered GeoJSON feature on top (colour =
+       verification state), court names from z12.5. Zooming back under the
+       gate dissolves the dots in again. If maplibre-gl or WebGL never
+       arrives, the dotted map simply keeps working — no blank canvas. */
+    let gl = null, glwrap = null, glmapEl = null;
+    let glOn = false, glFading = false, glBroken = false;
+    const GL_COURT_ZOOM = 15.4;
+
+    // same palette as the verification chips in the court panel
+    const GL_COLORS = {
+      verified: "#1c7c44",
+      osm: "#3878b8",
+      unfound: "#d3743a",
+      plain: "#1f4e79",
+    };
+
+    function svgZoomToGl(k) {
+      const { s } = pxScale();
+      // world unit = 1/1000 of 360°; GL world = 256·2^z px
+      return Math.log2(Math.max(1e-9, (VW * s * k) / 256));
+    }
+    function glZoomToSvg(z) {
+      const { s } = pxScale();
+      return (Math.pow(2, z) * 256) / (VW * s);
+    }
+    function glCenterOfCam() {
+      const wx = (VW / 2 - cam.tx) / cam.k, wy = (VH / 2 - cam.ty) / cam.k;
+      return [wx * 360 / VW - 180, 84 - wy * 142 / VH];
+    }
+    // hysteresis: hand back to the dots a touch below the zoom that entered
+    const glExitZ = () => svgZoomToGl(K_TAKE) - 0.3;
+
+    function glFeatures() {
+      const feats = [];
+      for (const c of COURTS) {
+        if (!Number.isFinite(c.latitude) || !Number.isFinite(c.longitude)) continue;
+        feats.push({
+          type: "Feature",
+          geometry: { type: "Point", coordinates: [c.longitude, c.latitude] },
+          properties: {
+            key: courtKey(c),
+            name: c.name || "",
+            v: c.verify_status || "",
+          },
+        });
+      }
+      return { type: "FeatureCollection", features: feats };
+    }
+
+    function glStyle() {
+      return {
+        version: 8,
+        // MapLibre's own demo font endpoint: free, no key, valid PBF glyphs
+        // (fonts.openmaptiles.org now serves an HTML page and breaks the PBF parser)
+        glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
+        sources: {
+          streets: {
+            type: "raster",
+            tiles: [
+              "https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
+              "https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
+              "https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
+            ],
+            tileSize: 256,
+            maxzoom: 19,
+            attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>',
+          },
+          courts: {
+            type: "geojson",
+            data: glFeatures(),
+            cluster: true,
+            clusterRadius: 34,
+            clusterMaxZoom: 12,
+          },
+        },
+        layers: [
+          { id: "paper", type: "background", paint: { "background-color": "#eef1ee" } },
+          { id: "streets", type: "raster", source: "streets" },
+          {
+            id: "court-cluster", type: "circle", source: "courts",
+            filter: ["has", "point_count"],
+            paint: {
+              "circle-color": GL_COLORS.plain,
+              "circle-radius": ["interpolate", ["linear"], ["get", "point_count"], 2, 9, 20, 13, 100, 17],
+              "circle-opacity": 0.92,
+              "circle-stroke-width": 2.5,
+              "circle-stroke-color": "#ffffff",
+            },
+          },
+          {
+            id: "court-cluster-count", type: "symbol", source: "courts",
+            filter: ["has", "point_count"],
+            layout: {
+              "text-field": ["get", "point_count_abbreviated"],
+              "text-font": ["Noto Sans Regular"],
+              "text-size": 11,
+              "text-allow-overlap": true,
+            },
+            paint: { "text-color": "#ffffff" },
+          },
+          {
+            id: "court-dot", type: "circle", source: "courts",
+            filter: ["!", ["has", "point_count"]],
+            paint: {
+              "circle-color": [
+                "match", ["get", "v"],
+                "verified", GL_COLORS.verified,
+                "osm", GL_COLORS.osm,
+                "unfound", GL_COLORS.unfound,
+                GL_COLORS.plain,
+              ],
+              "circle-radius": ["interpolate", ["linear"], ["zoom"], 6, 4.2, 12, 6, 17, 8],
+              "circle-stroke-width": 1.6,
+              "circle-stroke-color": "#ffffff",
+            },
+          },
+          {
+            id: "court-name", type: "symbol", source: "courts",
+            filter: ["!", ["has", "point_count"]],
+            minzoom: 12.5,
+            layout: {
+              "text-field": ["get", "name"],
+              "text-font": ["Noto Sans Regular"],
+              "text-size": 11,
+              "text-offset": [0, 1.4],
+              "text-anchor": "top",
+              "text-max-width": 9,
+              "text-allow-overlap": false,
+            },
+            paint: {
+              "text-color": "#1c2f3f",
+              "text-halo-color": "rgba(255,255,255,.92)",
+              "text-halo-width": 1.4,
+            },
+          },
+          {
+            // invisible tap target: a visible 5px court is honest but too
+            // small to hit on a phone, so clicks resolve against this disc
+            id: "court-hit", type: "circle", source: "courts",
+            filter: ["!", ["has", "point_count"]],
+            paint: { "circle-color": "#000000", "circle-opacity": 0, "circle-radius": 13 },
+          },
+        ],
+      };
+    }
+
+    function ensureGL() {
+      if (gl) return true;
+      if (glBroken || !window.maplibregl) return false;
+      const box = svg.parentElement;   // .mapbox
+      glwrap = document.createElement("div");
+      glwrap.className = "glwrap";
+      glmapEl = document.createElement("div");
+      glmapEl.className = "glmap";
+      glwrap.appendChild(glmapEl);
+      box.appendChild(glwrap);
+      try {
+        gl = new maplibregl.Map({
+          container: glmapEl,
+          center: glCenterOfCam(),
+          zoom: svgZoomToGl(cam.k),
+          style: glStyle(),
+          attributionControl: { compact: false },
+          dragRotate: false,
+          touchPitch: false,
+          pitchWithRotate: false,
+          maxZoom: 19,
+        });
+      } catch (err) {
+        glBroken = true;
+        window.__ssglError = String((err && err.message) || err);
+        glwrap.remove();
+        gl = glmapEl = glwrap = null;
+        return false;
+      }
+      gl.on("click", onGLClick);
+      gl.on("mousemove", (e) => {
+        const hits = gl.queryRenderedFeatures(e.point, { layers: ["court-cluster", "court-hit", "court-dot"] });
+        gl.getCanvas().style.cursor = hits.length ? "pointer" : "";
+      });
+      gl.on("zoom", () => {
+        if (glOn && !glFading && gl.getZoom() < glExitZ()) exitToDots();
+      });
+      gl.on("error", (e) => {
+        const msg = String((e && e.error && e.error.message) || "");
+        if (/webgl|context/i.test(msg)) {
+          glBroken = true;
+          if (glOn) exitToDots();
+        }
+      });
+      window.__ssgl = gl;   // test/debug handle
+      return true;
+    }
+
+    function onGLClick(e) {
+      if (!gl) return;
+      // A bubble wins over any stray dot it overlaps: at low zoom the cluster
+      // is the intended target, and expanding it is how those dots get reached.
+      const f = gl.queryRenderedFeatures(e.point, { layers: ["court-cluster"] })[0]
+        || gl.queryRenderedFeatures(e.point, { layers: ["court-hit", "court-dot"] })[0];
+      if (!f) return;
+      if (f.properties.cluster) {
+        const src = gl.getSource("courts");
+        const go = (z) => gl.easeTo({
+          center: f.geometry.coordinates,
+          zoom: Math.min(17, Number.isFinite(z) ? z : gl.getZoom() + 2.2),
+          duration: 750,
+        });
+        try {
+          const p = src.getClusterExpansionZoom(f.properties.cluster_id);
+          if (p && p.then) p.then(go).catch(() => go());
+          else go(p);
+        } catch (_) { go(); }
+      } else {
+        const c = COURT_INDEX.get(f.properties.key);
+        if (c) Panels.openCourt(c);
+      }
+    }
+
+    function enterGL() {
+      if (glOn || !ensureGL()) return false;
+      stopFlight();                 // the hidden dotted camera needs no flight
+      gl.resize();                  // viewport may have changed while hidden
+      gl.jumpTo({ center: glCenterOfCam(), zoom: svgZoomToGl(cam.k) });
+      glOn = true;
+      glFading = true;
+      svg.parentElement.classList.add("gl-on");
+      setTimeout(() => { glFading = false; }, 620);
+      return true;
+    }
+
+    function exitToDots(target) {
+      if (!glOn) return;
+      glOn = false;
+      glFading = true;
+      if (target) {
+        cam.k = target.k; cam.tx = target.tx; cam.ty = target.ty;
+      } else if (gl) {
+        const z = gl.getZoom(), c = gl.getCenter();
+        const k = Math.min(K_MAX, Math.max(K_MIN, glZoomToSvg(z)));
+        const wx = (c.lng + 180) / 360 * VW, wy = YW(c.lat);
+        const n = clamp(k, VW / 2 - wx * k, VH / 2 - wy * k);
+        cam.k = n.k; cam.tx = n.tx; cam.ty = n.ty;
+      }
+      svg.parentElement.classList.remove("gl-on");
+      apply();
+      setTimeout(() => { glFading = false; }, 620);
+    }
+
+    /* court flight: hand the camera to GL when it exists, otherwise fall
+       back to the deepest the dotted map can go without inventing detail */
+    function diveTo(c) {
+      if (ensureGL() && !glBroken) {
+        if (!glOn) enterGL();
+        gl.flyTo({
+          center: [c.longitude, c.latitude],
+          zoom: GL_COURT_ZOOM,
+          duration: 1500,
+          offset: [-Math.round((glmapEl.clientWidth || 0) * 0.14), 0],
+        });
+        return;
+      }
+      flyToPoint({ x: X(c.longitude), y: YW(c.latitude) }, Math.max(cam.k, K_MAX), 900, 0.16);
+    }
+
+    function syncGLGate() {
+      if (glOn || glFading || glBroken) return;
+      if (cam.k < K_TAKE || !window.maplibregl) return;
+      enterGL();
+    }
+
     function apply() {
       root.setAttribute("transform", `translate(${cam.tx} ${cam.ty}) scale(${cam.k})`);
       cull();
+      syncGLGate();
     }
+
+    // deferred maplibre-gl may land after the first scroll: pick the gate
+    // back up once the document is fully loaded
+    window.addEventListener("load", () => { if (cam.k >= K_TAKE) syncGLGate(); });
 
     /* Culling: the pin list is kept sorted by x, so the visible slice is a
        contiguous run found by binary search. Only what crosses the window
@@ -258,6 +549,12 @@
       root.appendChild(pinsRoot);
       svg.appendChild(root);
 
+      // registry changed under a live GL map: push fresh features
+      if (gl) {
+        const src = gl.getSource("courts");
+        if (src) src.setData(glFeatures());
+      }
+
       svg.addEventListener("pointerdown", (e) => {
         if (e.target.closest(".mk")) return; // pins handle themselves
         onGrabStart(e);
@@ -273,8 +570,8 @@
         if (!mk) return;
         const c = COURT_INDEX.get(mk.dataset.id);
         if (c) {
-          flyToPoint({ x: X(c.longitude), y: YW(c.latitude) }, Math.max(cam.k, 2.2), 850, 0.16);
           Panels.openCourt(c);
+          diveTo(c);
         }
       });
       apply();
@@ -299,7 +596,10 @@
     });
     function moveBy(dx, dy) {
       const { s } = pxScale();
-      const n = clamp(cam.k, cam.tx + dx / s, cam.ty + dy / s);
+      // pointer-locked panning: the world delta is screen delta / (s·k),
+      // otherwise drags move the map k× faster than the pointer (harmless
+      // at k=1-7, catastrophic at street zoom)
+      const n = clamp(cam.k, cam.tx + dx / (s * cam.k), cam.ty + dy / (s * cam.k));
       cam.tx = n.tx; cam.ty = n.ty;
       apply();
     }
@@ -308,6 +608,7 @@
     function onWheel(e) {
       e.preventDefault();
       const p = clientToView(e.clientX, e.clientY);
+      // one ordinary scroll is enough to cross K_TAKE and wake the real map
       zoomTo(cam.k * Math.exp(-e.deltaY * 0.0016), p);
     }
 
@@ -326,24 +627,41 @@
       const n = clamp(kk, wantT.tx, wantT.ty);
       if (RM || document.hidden) { cam.k = n.k; cam.tx = n.tx; cam.ty = n.ty; apply(); return; }
       const from = { ...cam }, to = n, t0 = performance.now();
+      const token = ++flightSeq;
       const ease = (t) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
       const tick = (now) => {
+        if (token !== flightSeq) return;   // superseded or stopped
         const p = Math.min(1, (now - t0) / ms), e = ease(p);
         cam.k = from.k + (to.k - from.k) * e;
         cam.tx = from.tx + (to.tx - from.tx) * e;
         cam.ty = from.ty + (to.ty - from.ty) * e;
         apply();
-        if (p < 1 && flight) flight = requestAnimationFrame(tick);
+        if (p < 1) flight = requestAnimationFrame(tick);
+        else flight = null;
       };
       flight = requestAnimationFrame(tick);
+      // flights finish by deadline even when rAF stalls (background tab):
+      // the token-checked timeout lands exactly where the ease would end
+      setTimeout(() => {
+        if (token !== flightSeq) return;
+        cam.k = to.k; cam.tx = to.tx; cam.ty = to.ty;
+        flight = null;
+        apply();
+      }, ms + 420);
     }
     function stopFlight() {
+      flightSeq++;                 // invalidates any pending force-finish
       if (flight) { cancelAnimationFrame(flight); flight = null; }
     }
 
     function zoomButtons() {
       document.querySelectorAll("[data-zoom]").forEach((b) => b.addEventListener("click", () => {
         const mode = b.dataset.zoom;
+        if (glOn && gl) {
+          if (mode === "in") { gl.zoomIn({ duration: 420 }); return; }
+          if (mode === "out") { gl.zoomOut({ duration: 420 }); return; }
+          if (mode === "fit") { exitToDots({ k: 1, tx: 0, ty: 0 }); return; }
+        }
         const { ox, oy, r } = pxScale();
         const centerView = clientToView(r.left + ox + (VW / 2) * Math.min(r.width / VW, r.height / VH), r.top + oy + (VH / 2) * Math.min(r.width / VW, r.height / VH));
         if (mode === "in") zoomTo(cam.k * 1.45, centerView);
@@ -352,11 +670,18 @@
       }));
     }
 
-    function fit() { cam.k = 1; cam.tx = 0; cam.ty = 0; apply(); }
+    function fit() {
+      if (glOn) { exitToDots({ k: 1, tx: 0, ty: 0 }); return; }
+      cam.k = 1; cam.tx = 0; cam.ty = 0; apply();
+    }
 
     window.addEventListener("keydown", (e) => {
-      if (e.key === "+" || e.key === "=") zoomTo(cam.k * 1.3, { x: VW / 2, y: VH / 2 });
-      if (e.key === "-") zoomTo(cam.k / 1.3, { x: VW / 2, y: VH / 2 });
+      if (e.key === "+" || e.key === "=") {
+        if (glOn && gl) gl.zoomIn({ duration: 320 }); else zoomTo(cam.k * 1.3, { x: VW / 2, y: VH / 2 });
+      }
+      if (e.key === "-") {
+        if (glOn && gl) gl.zoomOut({ duration: 320 }); else zoomTo(cam.k / 1.3, { x: VW / 2, y: VH / 2 });
+      }
       if (e.key === "0") fit();
     });
 
@@ -367,6 +692,8 @@
       const t0 = performance.now();
       const tick = (now) => {
         if (performance.now() - lastTouch < 4500 || swayBlocked) { swayRAF = null; return; }
+        // the breathe belongs to the dotted view; hidden or street-level, stay still
+        if (glOn) { swayRAF = null; return; }
         const t = (now - t0) / 1000;
         const dx = Math.sin(t * 0.32) * 4, dy = Math.cos(t * 0.21) * 3;
         root.setAttribute("transform",
@@ -384,7 +711,7 @@
     function pauseSway() { swayBlocked = true; if (swayRAF) { cancelAnimationFrame(swayRAF); swayRAF = null; } if (root) apply(); }
     function resumeSway() { swayBlocked = false; lastTouch = 0; sway(); }
 
-    return { build, zoomButtons, fit, flyToPoint, zoomTo, sway, pauseSway, resumeSway };
+    return { build, zoomButtons, fit, flyToPoint, zoomTo, diveTo, sway, pauseSway, resumeSway };
   })();
 
   /* ============================================================
@@ -677,8 +1004,8 @@
           panel.hidden = true;
           // records without coordinates open their record without a flight
           if (Number.isFinite(c.latitude) && Number.isFinite(c.longitude)) {
-            World.flyToPoint({ x: X(c.longitude), y: YW(c.latitude) }, 2.4, 900, 0.16);
-            setTimeout(() => Panels.openCourt(c), RM ? 0 : 780);
+            World.diveTo(c);
+            setTimeout(() => Panels.openCourt(c), RM ? 0 : 820);
           } else {
             Panels.openCourt(c);
           }

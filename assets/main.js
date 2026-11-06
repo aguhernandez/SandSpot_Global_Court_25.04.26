@@ -187,14 +187,20 @@
     /* === MapLibre GL hand-off ============================================
        The dotted map is the identity at the world view. At the first real
        zoom (K_TAKE) a MapLibre canvas crossfades over it on the same centre
-       point and equivalent zoom: real OSM/CARTO streets underneath, every
+       point and equivalent zoom: real vector streets underneath, every
        geolocated court as a clustered GeoJSON feature on top (colour =
        verification state), court names from z12.5. Zooming back under the
        gate dissolves the dots in again. If maplibre-gl or WebGL never
-       arrives, the dotted map simply keeps working — no blank canvas. */
+       arrives, the dotted map simply keeps working — no blank canvas.
+
+       Basemap = OpenFreeMap: free, keyless, registration-free vector tiles
+       (OpenStreetMap data). No per-view billing and no watermark; if it is
+       ever unreachable the dots stay because we only reveal a loaded map. */
     let gl = null, glwrap = null, glmapEl = null;
-    let glOn = false, glFading = false, glBroken = false;
+    let glOn = false, glFading = false, glBroken = false, glReady = false;
+    let pendingDive = null;
     const GL_COURT_ZOOM = 15.4;
+    const GL_STYLE_URL = "https://tiles.openfreemap.org/styles/positron";
 
     // same palette as the verification chips in the court panel
     const GL_COLORS = {
@@ -237,101 +243,99 @@
       return { type: "FeatureCollection", features: feats };
     }
 
-    function glStyle() {
-      return {
-        version: 8,
-        // MapLibre's own demo font endpoint: free, no key, valid PBF glyphs
-        // (fonts.openmaptiles.org now serves an HTML page and breaks the PBF parser)
-        glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
-        sources: {
-          streets: {
-            type: "raster",
-            tiles: [
-              "https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
-              "https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
-              "https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
-            ],
-            tileSize: 256,
-            maxzoom: 19,
-            attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>',
-          },
-          courts: {
-            type: "geojson",
-            data: glFeatures(),
-            cluster: true,
-            clusterRadius: 34,
-            clusterMaxZoom: 12,
-          },
+    /* Court layers sit on top of whichever basemap style is loaded, so the
+       registry survives a future swap of tile provider. OpenFreeMap already
+       brings its own glyphs + labels; we only add the courts. */
+    function installCourtLayers() {
+      if (!gl || gl.getSource("courts")) return;
+      gl.addSource("courts", {
+        type: "geojson",
+        data: glFeatures(),
+        cluster: true,
+        clusterRadius: 34,
+        clusterMaxZoom: 12,
+      });
+      gl.addLayer({
+        id: "court-cluster", type: "circle", source: "courts",
+        filter: ["has", "point_count"],
+        paint: {
+          "circle-color": GL_COLORS.plain,
+          "circle-radius": ["interpolate", ["linear"], ["get", "point_count"], 2, 9, 20, 13, 100, 17],
+          "circle-opacity": 0.92,
+          "circle-stroke-width": 2.5,
+          "circle-stroke-color": "#ffffff",
         },
-        layers: [
-          { id: "paper", type: "background", paint: { "background-color": "#eef1ee" } },
-          { id: "streets", type: "raster", source: "streets" },
-          {
-            id: "court-cluster", type: "circle", source: "courts",
-            filter: ["has", "point_count"],
-            paint: {
-              "circle-color": GL_COLORS.plain,
-              "circle-radius": ["interpolate", ["linear"], ["get", "point_count"], 2, 9, 20, 13, 100, 17],
-              "circle-opacity": 0.92,
-              "circle-stroke-width": 2.5,
-              "circle-stroke-color": "#ffffff",
-            },
-          },
-          {
-            id: "court-cluster-count", type: "symbol", source: "courts",
-            filter: ["has", "point_count"],
-            layout: {
-              "text-field": ["get", "point_count_abbreviated"],
-              "text-font": ["Noto Sans Regular"],
-              "text-size": 11,
-              "text-allow-overlap": true,
-            },
-            paint: { "text-color": "#ffffff" },
-          },
-          {
-            id: "court-dot", type: "circle", source: "courts",
-            filter: ["!", ["has", "point_count"]],
-            paint: {
-              "circle-color": [
-                "match", ["get", "v"],
-                "verified", GL_COLORS.verified,
-                "osm", GL_COLORS.osm,
-                "unfound", GL_COLORS.unfound,
-                GL_COLORS.plain,
-              ],
-              "circle-radius": ["interpolate", ["linear"], ["zoom"], 6, 4.2, 12, 6, 17, 8],
-              "circle-stroke-width": 1.6,
-              "circle-stroke-color": "#ffffff",
-            },
-          },
-          {
-            id: "court-name", type: "symbol", source: "courts",
-            filter: ["!", ["has", "point_count"]],
-            minzoom: 12.5,
-            layout: {
-              "text-field": ["get", "name"],
-              "text-font": ["Noto Sans Regular"],
-              "text-size": 11,
-              "text-offset": [0, 1.4],
-              "text-anchor": "top",
-              "text-max-width": 9,
-              "text-allow-overlap": false,
-            },
-            paint: {
-              "text-color": "#1c2f3f",
-              "text-halo-color": "rgba(255,255,255,.92)",
-              "text-halo-width": 1.4,
-            },
-          },
-          {
-            // invisible tap target: a visible 5px court is honest but too
-            // small to hit on a phone, so clicks resolve against this disc
-            id: "court-hit", type: "circle", source: "courts",
-            filter: ["!", ["has", "point_count"]],
-            paint: { "circle-color": "#000000", "circle-opacity": 0, "circle-radius": 13 },
-          },
-        ],
-      };
+      });
+      gl.addLayer({
+        id: "court-cluster-count", type: "symbol", source: "courts",
+        filter: ["has", "point_count"],
+        layout: {
+          "text-field": ["get", "point_count_abbreviated"],
+          "text-font": ["Noto Sans Regular"],
+          "text-size": 11,
+          "text-allow-overlap": true,
+          // the count must not reserve collision space, or it would knock
+          // out the basemap's own city labels around every cluster
+          "text-ignore-placement": true,
+        },
+        paint: { "text-color": "#ffffff" },
+      });
+      gl.addLayer({
+        id: "court-dot", type: "circle", source: "courts",
+        filter: ["!", ["has", "point_count"]],
+        paint: {
+          "circle-color": [
+            "match", ["get", "v"],
+            "verified", GL_COLORS.verified,
+            "osm", GL_COLORS.osm,
+            "unfound", GL_COLORS.unfound,
+            GL_COLORS.plain,
+          ],
+          "circle-radius": ["interpolate", ["linear"], ["zoom"], 6, 4.2, 12, 6, 17, 8],
+          "circle-stroke-width": 1.6,
+          "circle-stroke-color": "#ffffff",
+        },
+      });
+      gl.addLayer({
+        id: "court-name", type: "symbol", source: "courts",
+        filter: ["!", ["has", "point_count"]],
+        minzoom: 12.5,
+        layout: {
+          "text-field": ["get", "name"],
+          "text-font": ["Noto Sans Regular"],
+          "text-size": 11,
+          "text-offset": [0, 1.4],
+          "text-anchor": "top",
+          "text-max-width": 9,
+          "text-allow-overlap": false,
+        },
+        paint: {
+          "text-color": "#1c2f3f",
+          "text-halo-color": "rgba(255,255,255,.92)",
+          "text-halo-width": 1.4,
+        },
+      });
+      gl.addLayer({
+        // invisible tap target: a visible 5px court is honest but too
+        // small to hit on a phone, so clicks resolve against this disc
+        id: "court-hit", type: "circle", source: "courts",
+        filter: ["!", ["has", "point_count"]],
+        paint: { "circle-color": "#000000", "circle-opacity": 0, "circle-radius": 13 },
+      });
+    }
+
+    function onGLLoad() {
+      if (glBroken) return;
+      installCourtLayers();
+      glReady = true;
+      window.__ssglReady = true;
+      if (pendingDive) {
+        const c = pendingDive;
+        pendingDive = null;
+        diveTo(c);
+      } else if (cam.k >= K_TAKE && !glOn) {
+        syncGLGate();
+      }
     }
 
     function ensureGL() {
@@ -349,7 +353,7 @@
           container: glmapEl,
           center: glCenterOfCam(),
           zoom: svgZoomToGl(cam.k),
-          style: glStyle(),
+          style: GL_STYLE_URL,
           attributionControl: { compact: false },
           dragRotate: false,
           touchPitch: false,
@@ -363,8 +367,10 @@
         gl = glmapEl = glwrap = null;
         return false;
       }
+      gl.on("load", onGLLoad);
       gl.on("click", onGLClick);
       gl.on("mousemove", (e) => {
+        if (!glReady) return;
         const hits = gl.queryRenderedFeatures(e.point, { layers: ["court-cluster", "court-hit", "court-dot"] });
         gl.getCanvas().style.cursor = hits.length ? "pointer" : "";
       });
@@ -383,11 +389,11 @@
     }
 
     function onGLClick(e) {
-      if (!gl) return;
+      if (!gl || !glReady) return;
       // A bubble wins over any stray dot it overlaps: at low zoom the cluster
       // is the intended target, and expanding it is how those dots get reached.
-      const f = gl.queryRenderedFeatures(e.point, { layers: ["court-cluster"] })[0]
-        || gl.queryRenderedFeatures(e.point, { layers: ["court-hit", "court-dot"] })[0];
+      const f = (gl.getLayer("court-cluster") && gl.queryRenderedFeatures(e.point, { layers: ["court-cluster"] })[0])
+        || (gl.getLayer("court-hit") && gl.queryRenderedFeatures(e.point, { layers: ["court-hit", "court-dot"] })[0]);
       if (!f) return;
       if (f.properties.cluster) {
         const src = gl.getSource("courts");
@@ -408,7 +414,8 @@
     }
 
     function enterGL() {
-      if (glOn || !ensureGL()) return false;
+      if (glOn) return true;
+      if (!ensureGL() || !glReady) return false;   // never fade to a blank canvas
       stopFlight();                 // the hidden dotted camera needs no flight
       gl.resize();                  // viewport may have changed while hidden
       gl.jumpTo({ center: glCenterOfCam(), zoom: svgZoomToGl(cam.k) });
@@ -440,15 +447,21 @@
     /* court flight: hand the camera to GL when it exists, otherwise fall
        back to the deepest the dotted map can go without inventing detail */
     function diveTo(c) {
-      if (ensureGL() && !glBroken) {
+      if (!glBroken && ensureGL()) {
+        if (!glReady) {           // style still warming: fly once real tiles exist
+          pendingDive = c;
+          return;
+        }
         if (!glOn) enterGL();
-        gl.flyTo({
-          center: [c.longitude, c.latitude],
-          zoom: GL_COURT_ZOOM,
-          duration: 1500,
-          offset: [-Math.round((glmapEl.clientWidth || 0) * 0.14), 0],
-        });
-        return;
+        if (glOn) {
+          gl.flyTo({
+            center: [c.longitude, c.latitude],
+            zoom: GL_COURT_ZOOM,
+            duration: 1500,
+            offset: [-Math.round((glmapEl.clientWidth || 0) * 0.14), 0],
+          });
+          return;
+        }
       }
       flyToPoint({ x: X(c.longitude), y: YW(c.latitude) }, Math.max(cam.k, K_MAX), 900, 0.16);
     }
@@ -465,9 +478,13 @@
       syncGLGate();
     }
 
-    // deferred maplibre-gl may land after the first scroll: pick the gate
-    // back up once the document is fully loaded
-    window.addEventListener("load", () => { if (cam.k >= K_TAKE) syncGLGate(); });
+    // Deferred maplibre-gl may land after the first scroll; and once the app
+    // is idle we warm the engine up so the first notch finds the style, the
+    // glyphs and the world tiles already loaded (instant, honest hand-off).
+    window.addEventListener("load", () => {
+      if (cam.k >= K_TAKE) syncGLGate();
+      setTimeout(() => { if (!gl && !glBroken && window.maplibregl) ensureGL(); }, 1800);
+    });
 
     /* Culling: the pin list is kept sorted by x, so the visible slice is a
        contiguous run found by binary search. Only what crosses the window

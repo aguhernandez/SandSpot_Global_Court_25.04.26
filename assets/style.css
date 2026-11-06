@@ -877,7 +877,7 @@ body.map-dimmed .mapbox { filter: brightness(.78) saturate(.92); }
   html, body { scroll-behavior: auto; }
 }
 
-/* === MapLibre hand-off: the dotted world fades into OSM/CARTO streets === */
+/* === MapLibre hand-off: the dotted world fades into real vector streets === */
 .glwrap {
   position: absolute;
   inset: 0;
@@ -892,7 +892,7 @@ body.map-dimmed .mapbox { filter: brightness(.78) saturate(.92); }
 .mapbox.gl-on .glwrap { opacity: 1; pointer-events: auto; }
 
 /* attribution chip in the same paper language as the rest of the HUD */
-.glmap .maplibregl-ctrl-bottom-left { bottom: 26px; left: 8px; }
+.glmap .maplibregl-ctrl-bottom-right { bottom: 4px; right: 8px; }
 .glmap .maplibregl-ctrl-attrib {
   background: rgba(255,255,255,.82) !important;
   border-radius: 6px;
